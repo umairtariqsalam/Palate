@@ -408,7 +408,7 @@ public class ProfileFragment extends Fragment {
                 intent.putExtra("userId", userId);
                 startActivity(intent);
             }
-        });
+        }, false);
         
         // Use StaggeredGridLayoutManager for diff image sizes
         StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);

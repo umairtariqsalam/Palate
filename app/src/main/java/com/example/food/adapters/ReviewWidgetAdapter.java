@@ -28,6 +28,7 @@ public class ReviewWidgetAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private Map<String, Restaurant> restaurantMap;
     private OnReviewClickListener listener;
     private boolean isLoading = false;
+    private boolean showUserInfo = true;
 
 
     public interface OnReviewClickListener {
@@ -39,6 +40,13 @@ public class ReviewWidgetAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         this.reviews = reviews;
         this.listener = listener;
         this.restaurantMap = new HashMap<>();
+    }
+
+    public ReviewWidgetAdapter(List<Review> reviews, OnReviewClickListener listener, boolean showUserInfo) {
+        this.reviews = reviews;
+        this.listener = listener;
+        this.restaurantMap = new HashMap<>();
+        this.showUserInfo = showUserInfo;
     }
 
     @Override
@@ -95,6 +103,11 @@ public class ReviewWidgetAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     public void setRestaurantMap(Map<String, Restaurant> restaurantMap) {
         this.restaurantMap = restaurantMap != null ? restaurantMap : new HashMap<>();
+        notifyDataSetChanged();
+    }
+
+    public void setShowUserInfo(boolean showUserInfo) {
+        this.showUserInfo = showUserInfo;
         notifyDataSetChanged();
     }
 
@@ -162,26 +175,36 @@ public class ReviewWidgetAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             }
             
             // Bind user information
-            if (tvUserName != null) {
-                String userName = review.getUserName();
-                if (userName != null && !userName.trim().isEmpty()) {
-                    tvUserName.setText(userName);
-                } else {
-                    tvUserName.setText(itemView.getContext().getString(R.string.user_name_placeholder));
+            if (showUserInfo) {
+                if (tvUserName != null) {
+                    String userName = review.getUserName();
+                    if (userName != null && !userName.trim().isEmpty()) {
+                        tvUserName.setText(userName);
+                    } else {
+                        tvUserName.setText(itemView.getContext().getString(R.string.user_name_placeholder));
+                    }
                 }
-            }
-            
-            if (ivUserAvatar != null) {
-                String avatarUrl = review.getUserAvatarUrl();
-                if (avatarUrl != null && !avatarUrl.trim().isEmpty()) {
-                    Glide.with(itemView.getContext())
-                            .load(avatarUrl)
-                            .placeholder(R.drawable.ic_person)
-                            .error(R.drawable.ic_person)
-                            .circleCrop()
-                            .into(ivUserAvatar);
-                } else {
-                    ivUserAvatar.setImageResource(R.drawable.ic_person);
+                
+                if (ivUserAvatar != null) {
+                    String avatarUrl = review.getUserAvatarUrl();
+                    if (avatarUrl != null && !avatarUrl.trim().isEmpty()) {
+                        Glide.with(itemView.getContext())
+                                .load(avatarUrl)
+                                .placeholder(R.drawable.ic_person)
+                                .error(R.drawable.ic_person)
+                                .circleCrop()
+                                .into(ivUserAvatar);
+                    } else {
+                        ivUserAvatar.setImageResource(R.drawable.ic_person);
+                    }
+                }
+                
+                if (userInfoButton != null) {
+                    userInfoButton.setVisibility(View.VISIBLE);
+                }
+            } else {
+                if (userInfoButton != null) {
+                    userInfoButton.setVisibility(View.GONE);
                 }
             }
             if (ivRestaurantImage != null) {

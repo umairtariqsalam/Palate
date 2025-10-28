@@ -101,7 +101,7 @@ public class UserProfileActivity extends AppCompatActivity {
                     startActivity(intent);
                 }
             }
-        });
+        }, false);
         rvUserReviews.setAdapter(reviewAdapter);
     }
     
