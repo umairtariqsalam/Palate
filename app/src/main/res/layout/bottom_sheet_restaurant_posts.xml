@@ -32,6 +32,101 @@
             android:textColor="#666666"
             android:layout_marginBottom="8dp" />
 
+        <!-- Crowd Density Status -->
+        <LinearLayout
+            android:id="@+id/ll_crowd_density"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/crowd_density_background"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp">
+
+            <View
+                android:id="@+id/v_crowd_indicator"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:background="@drawable/circle_background"
+                android:layout_marginEnd="8dp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_crowd_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Loading crowd status..."
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:id="@+id/tv_crowd_description"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Please wait..."
+                    android:textSize="12sp"
+                    android:textColor="#666666" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_feedback_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 feedbacks"
+                android:textSize="12sp"
+                android:textColor="#999999" />
+        </LinearLayout>
+
+        <!-- Feedback Buttons -->
+        <LinearLayout
+            android:id="@+id/ll_feedback_buttons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="12dp">
+
+            <Button
+                android:id="@+id/btn_not_crowded"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="Not Crowded"
+                android:textSize="12sp"
+                android:background="@drawable/button_crowd_feedback_green"
+                android:textColor="@color/white" />
+
+            <Button
+                android:id="@+id/btn_moderately_crowded"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp"
+                android:text="Moderate"
+                android:textSize="12sp"
+                android:background="@drawable/button_crowd_feedback_yellow"
+                android:textColor="@color/white" />
+
+            <Button
+                android:id="@+id/btn_very_crowded"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:text="Very Crowded"
+                android:textSize="12sp"
+                android:background="@drawable/button_crowd_feedback_red"
+                android:textColor="@color/white" />
+        </LinearLayout>
+
         <!-- Navigation Button -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_navigate"

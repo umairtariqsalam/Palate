@@ -11,6 +11,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.ImageButton;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -24,7 +26,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.food.adapters.ReviewWidgetAdapter;
 import com.example.food.data.Review;
+import com.example.food.data.CrowdFeedback;
 import com.example.food.dialogs.ReviewDetailsDialog;
+import com.example.food.service.CrowdDensityService;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 // FragmentManager and FragmentTransaction no longer needed, simplified map initialization
 
@@ -57,6 +61,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private FusedLocationProviderClient fusedLocationClient;
     private PlacesClient placesClient;
     private FirebaseFirestore db;
+    private CrowdDensityService crowdDensityService;
     
     // Zoom in/out buttons
     private ImageButton btnZoomIn;
@@ -103,6 +108,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         
         // Initialize Firebase Firestore
         db = FirebaseFirestore.getInstance();
+        crowdDensityService = new CrowdDensityService();
 
         // Simplified map initialization
         SupportMapFragment mapFragment = SupportMapFragment.newInstance();
@@ -225,10 +231,31 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         RecyclerView rvPosts = view.findViewById(R.id.rv_posts);
         TextView tvNoPosts = view.findViewById(R.id.tv_no_posts);
         androidx.appcompat.widget.AppCompatButton btnNavigate = view.findViewById(R.id.btn_navigate);
+        
+        // Crowd density views
+        LinearLayout llCrowdDensity = view.findViewById(R.id.ll_crowd_density);
+        View vCrowdIndicator = view.findViewById(R.id.v_crowd_indicator);
+        TextView tvCrowdStatus = view.findViewById(R.id.tv_crowd_status);
+        TextView tvCrowdDescription = view.findViewById(R.id.tv_crowd_description);
+        TextView tvFeedbackCount = view.findViewById(R.id.tv_feedback_count);
+        
+        // Feedback buttons
+        LinearLayout llFeedbackButtons = view.findViewById(R.id.ll_feedback_buttons);
+        Button btnNotCrowded = view.findViewById(R.id.btn_not_crowded);
+        Button btnModeratelyCrowded = view.findViewById(R.id.btn_moderately_crowded);
+        Button btnVeryCrowded = view.findViewById(R.id.btn_very_crowded);
 
         // Set restaurant info
         tvRestaurantName.setText(restaurant.getName());
         tvRestaurantAddress.setText(restaurant.getAddress());
+
+        // Load and display crowd density
+        loadCrowdDensity(restaurant.getId(), vCrowdIndicator, tvCrowdStatus, tvCrowdDescription, tvFeedbackCount);
+
+        // Set up feedback button click listeners with refresh functionality
+        btnNotCrowded.setOnClickListener(v -> submitCrowdFeedback(restaurant.getId(), 1, vCrowdIndicator, tvCrowdStatus, tvCrowdDescription, tvFeedbackCount));
+        btnModeratelyCrowded.setOnClickListener(v -> submitCrowdFeedback(restaurant.getId(), 2, vCrowdIndicator, tvCrowdStatus, tvCrowdDescription, tvFeedbackCount));
+        btnVeryCrowded.setOnClickListener(v -> submitCrowdFeedback(restaurant.getId(), 3, vCrowdIndicator, tvCrowdStatus, tvCrowdDescription, tvFeedbackCount));
 
         // Set up navigation button click listener
         btnNavigate.setOnClickListener(v -> {
@@ -316,6 +343,79 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         if (googleMap != null) {
             googleMap.animateCamera(CameraUpdateFactory.zoomOut());
         }
+    }
+
+    /**
+     * Load and display crowd density for a restaurant
+     */
+    private void loadCrowdDensity(String restaurantId, View indicator, TextView status, 
+                                  TextView description, TextView feedbackCount) {
+        crowdDensityService.calculateCrowdDensity(restaurantId, new CrowdDensityService.CrowdDensityCallback() {
+            @Override
+            public void onSuccess(CrowdDensityService.CrowdDensityResult result) {
+                // Update UI on main thread
+                requireActivity().runOnUiThread(() -> {
+                    // Set indicator color
+                    int colorResId = result.getColorResId();
+                    indicator.setBackgroundColor(ContextCompat.getColor(requireContext(), colorResId));
+                    
+                    // Set status text
+                    status.setText(result.getStatusText());
+                    description.setText(result.getDescription());
+                    
+                    // Set feedback count
+                    if (result.hasRecentData()) {
+                        feedbackCount.setText(result.getFeedbackCount() + " feedbacks");
+                    } else {
+                        feedbackCount.setText("No recent data");
+                    }
+                });
+            }
+
+            @Override
+            public void onError(Exception e) {
+                Log.e(TAG, "Error loading crowd density", e);
+                requireActivity().runOnUiThread(() -> {
+                    status.setText("Error loading status");
+                    description.setText("Please try again later");
+                    feedbackCount.setText("Error");
+                });
+            }
+        });
+    }
+
+    /**
+     * Submit crowd feedback
+     */
+    private void submitCrowdFeedback(String restaurantId, int crowdingLevel, View indicator, 
+                                   TextView status, TextView description, TextView feedbackCount) {
+        // Get current user ID (you may need to implement this based on your auth system)
+        String currentUserId = "anonymous_user"; // Replace with actual user ID
+        
+        crowdDensityService.submitFeedback(restaurantId, currentUserId, crowdingLevel, 
+            new CrowdDensityService.FeedbackSubmitCallback() {
+                @Override
+                public void onSuccess() {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "Feedback submitted successfully!", Toast.LENGTH_SHORT).show();
+                        // Refresh crowd density display after successful submission
+                        loadCrowdDensity(restaurantId, indicator, status, description, feedbackCount);
+                    });
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    Log.e(TAG, "Error submitting feedback", e);
+                    requireActivity().runOnUiThread(() -> {
+                        String errorMessage = e.getMessage();
+                        if (errorMessage != null && errorMessage.contains("already submitted")) {
+                            Toast.makeText(requireContext(), "Please wait before submitting another feedback", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(requireContext(), "Failed to submit feedback: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            });
     }
     
     /**
