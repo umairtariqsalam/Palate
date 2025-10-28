@@ -34,6 +34,7 @@ import androidx.fragment.app.Fragment;
 import com.example.food.data.Review;
 import com.example.food.model.Restaurant;
 import com.example.food.service.ReviewService;
+import com.example.food.services.UserStatsService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;

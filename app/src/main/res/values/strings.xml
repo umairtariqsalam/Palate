@@ -316,5 +316,6 @@
     <string name="restaurant_search_hint">Search for a restaurant...</string>
     <string name="submit_review">Submit Review</string>
     <string name="post_review">Post Review</string>
+    <string name="search_reviews">Search reviews, users...</string>
     <string name="user_name_placeholder">User</string>
 </resources>

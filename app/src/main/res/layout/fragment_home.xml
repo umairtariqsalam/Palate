@@ -12,33 +12,51 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:background="@color/white"
-        android:elevation="4dp"
-        android:paddingBottom="8dp">
+        android:paddingTop="12dp">
 
-        <!-- App Title -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:text="Discover"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="@color/primary_gradient_start"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="12dp" />
-
-        <!-- Search Bar -->
-        <androidx.cardview.widget.CardView
+        <!-- Header with Search Bar -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/surface_light">
-
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp"
+            android:paddingHorizontal="16dp">
+            
+            <!-- Logo -->
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginEnd="16dp">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Palate"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/logo_primary"
+                    android:fontFamily="sans-serif-medium" />
+                
+                <!-- Blue dot above 'e' -->
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/circle_background"
+                    android:backgroundTint="@color/logo_accent"
+                    android:layout_marginStart="-12dp"
+                    android:layout_marginTop="-12dp" />
+                    
+            </LinearLayout>
+
+            <!-- Search Bar -->
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/search_bar_background"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:paddingHorizontal="16dp">
@@ -55,7 +73,7 @@
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:background="@android:color/transparent"
-                    android:hint="Search reviews..."
+                    android:hint="@string/search_reviews"
                     android:textSize="16sp"
                     android:textColorHint="@color/text_hint_light"
                     android:textColor="@color/text_primary_light"
@@ -64,55 +82,61 @@
                     android:maxLines="1" />
 
             </LinearLayout>
-
-        </androidx.cardview.widget.CardView>
+                
+        </LinearLayout>
 
     </LinearLayout>
 
-    <!-- Reviews RecyclerView -->
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipe_refresh_layout"
+    <!-- Content Container -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rv_posts"
+        <!-- Reviews RecyclerView -->
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipe_refresh_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_posts"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="8dp"
+                android:clipToPadding="false" />
+
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <!-- Empty State -->
+        <LinearLayout
+            android:id="@+id/layout_empty_state"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:padding="8dp"
-            android:clipToPadding="false" />
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone"
+            android:padding="32dp">
 
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No Reviews Yet"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_secondary_light"
+                android:layout_marginBottom="8dp" />
 
-    <!-- Empty State -->
-    <LinearLayout
-        android:id="@+id/layout_empty_state"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:visibility="gone"
-        android:padding="32dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Be the first to share your food experience!"
+                android:textSize="14sp"
+                android:textColor="@color/text_hint_light"
+                android:gravity="center" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="No Reviews Yet"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="@color/text_secondary_light"
-            android:layout_marginBottom="8dp" />
+        </LinearLayout>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Be the first to share your food experience!"
-            android:textSize="14sp"
-            android:textColor="@color/text_hint_light"
-            android:gravity="center" />
-
-    </LinearLayout>
+    </FrameLayout>
 
 </LinearLayout>

@@ -87,11 +87,11 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center_horizontal"
-            android:padding="8dp"
+            android:padding="4dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toTopOf="@id/bottomBar"
-            android:layout_marginBottom="16dp"
-            android:layout_marginEnd="16dp">
+
+            >
 
             <ImageView
                 android:id="@+id/btnAccurateIcon"

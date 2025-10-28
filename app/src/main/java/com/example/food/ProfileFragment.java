@@ -98,6 +98,13 @@ public class ProfileFragment extends Fragment {
         setupReviews();
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        // refresh user data when returning to profile
+        loadUserData();
+    }
+
     private void initViews(View view) {
         ivProfilePicture = view.findViewById(R.id.ivAvatar);
         tvUsername = view.findViewById(R.id.tvDisplayName);
@@ -495,7 +502,7 @@ public class ProfileFragment extends Fragment {
         statsContentContainer.setVisibility(View.VISIBLE);
         
         // Load analytics data when tab is shown
-        loadAnalyticsData();
+        loadFreshAnalyticsData();
     }
 
     private void loadUserData() {
@@ -1261,6 +1268,40 @@ public class ProfileFragment extends Fragment {
         }
     }
 
+    private void loadFreshAnalyticsData() {
+        if (auth.getCurrentUser() == null) {
+            return;
+        }
+        
+        // Fetch fresh user data from Firestore
+        String userId = auth.getCurrentUser().getUid();
+        db.collection("users").document(userId)
+            .get()
+            .addOnSuccessListener(documentSnapshot -> {
+                if (documentSnapshot != null && documentSnapshot.exists()) {
+                    UserProfile freshProfile = documentSnapshot.toObject(UserProfile.class);
+
+                    if (freshProfile != null) {
+                        
+                        userProfile = freshProfile;
+                        cacheManager.cacheUserProfile(freshProfile);
+
+
+
+                        // Load analytics with fresh data
+                        loadAnalyticsData();
+                    }
+                }
+            })
+            .addOnFailureListener(e -> {
+                Log.e(TAG, "Error loading fresh analytics data", e);
+
+                // fallback to cached data if fresh data fails
+              
+                loadAnalyticsData();
+            });
+    }
+
     private void loadAnalyticsData() {
         if (userProfile == null || userProfile.getStats() == null) {
             return;
@@ -1363,33 +1404,23 @@ public class ProfileFragment extends Fragment {
             categoriesSection == null || regionsSection == null || ivCategoriesArrow == null ||
             ivRegionsArrow == null || rvCategories == null || rvRegions == null) return;
         
-        if (reviews != null && !reviews.isEmpty()) {
-            // Collect unique categories and regions
-            java.util.Set<String> categories = new java.util.HashSet<>();
-            java.util.Set<String> regions = new java.util.HashSet<>();
+        
+        if (userProfile != null && userProfile.getStats() != null) {
+            Map<String, Object> stats = userProfile.getStats();
+            Object uniqueCategories = stats.get("uniqueCategories");
+            Object uniqueRegions = stats.get("uniqueRegions");
             
-            for (Review review : reviews) {
-                if (review.getRestaurantId() != null && restaurantMap.containsKey(review.getRestaurantId())) {
-                    Restaurant restaurant = restaurantMap.get(review.getRestaurantId());
-                    if (restaurant != null) {
-                        if (restaurant.getCategory() != null && !restaurant.getCategory().trim().isEmpty()) {
-                            categories.add(restaurant.getCategory());
-                        }
-                        if (restaurant.getRegion() != null && !restaurant.getRegion().trim().isEmpty()) {
-                            regions.add(restaurant.getRegion());
-                        }
-                    }
-                }
-            }
+            int categoriesCount = uniqueCategories != null ? ((Number) uniqueCategories).intValue() : 0;
+            int regionsCount = uniqueRegions != null ? ((Number) uniqueRegions).intValue() : 0;
             
-            if (!categories.isEmpty() || !regions.isEmpty()) {
-                // Set counts
-                tvCategoriesCount.setText(String.valueOf(categories.size()));
-                tvRegionsCount.setText(String.valueOf(regions.size()));
+            if (categoriesCount > 0 || regionsCount > 0) {
+                // Set counts from fresh stats
+                tvCategoriesCount.setText(String.valueOf(categoriesCount));
+                tvRegionsCount.setText(String.valueOf(regionsCount));
                 
-        // Setup dropdowns
-        setupDropdown(rvCategories, new ArrayList<>(categories), ivCategoriesArrow, categoriesSection);
-        setupDropdown(rvRegions, new ArrayList<>(regions), ivRegionsArrow, regionsSection);
+                
+                setupDropdown(rvCategories, new ArrayList<>(), ivCategoriesArrow, categoriesSection);
+                setupDropdown(rvRegions, new ArrayList<>(), ivRegionsArrow, regionsSection);
         
         // Setup click listeners for dropdown sections
         LinearLayout categoriesClickSection = view.findViewById(R.id.categoriesSection);

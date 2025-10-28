@@ -25,6 +25,7 @@ import com.example.food.dialogs.ReviewDetailsDialog;
 import com.example.food.model.Restaurant;
 import com.example.food.service.ReviewService;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,6 +44,7 @@ public class HomeFragment extends Fragment {
     private ReviewService reviewService;
     private List<Review> allReviews;
     private Map<String, Restaurant> restaurantMap;
+    private Map<String, String> userNamesMap; // Cache for user names
     private FirebaseFirestore db;
 
     @Nullable
@@ -58,6 +60,7 @@ public class HomeFragment extends Fragment {
         reviewService = new ReviewService();
         allReviews = new ArrayList<>();
         restaurantMap = new HashMap<>();
+        userNamesMap = new HashMap<>();
         db = FirebaseFirestore.getInstance();
         
         loadReviews();
@@ -160,6 +163,7 @@ public class HomeFragment extends Fragment {
                 getActivity().runOnUiThread(() -> {
                     allReviews.clear();
                     allReviews.addAll(reviews);
+                    loadUserNames();
                     loadRestaurants();
                     swipeRefreshLayout.setRefreshing(false);
                 });
@@ -176,6 +180,53 @@ public class HomeFragment extends Fragment {
                 });
             }
         });
+    }
+
+    private void loadUserNames() {
+        if (allReviews.isEmpty()) {
+            return;
+        }
+
+        List<String> userIds = new ArrayList<>();
+        for (Review review : allReviews) {
+            if (review.getUserId() != null && !userIds.contains(review.getUserId())) {
+                userIds.add(review.getUserId());
+            }
+        }
+
+        if (userIds.isEmpty()) {
+            return;
+        }
+
+        int batchSize = 10;
+        for (int i = 0; i < userIds.size(); i += batchSize) {
+            int endIndex = Math.min(i + batchSize, userIds.size());
+            List<String> batch = userIds.subList(i, endIndex);
+            
+            db.collection("users")
+                .whereIn("__name__", batch)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    for (QueryDocumentSnapshot document : querySnapshot) {
+                        String userId = document.getId();
+                        String userName = document.getString("name");
+                        if (userName == null || userName.trim().isEmpty()) {
+                            userName = document.getString("username");
+                        }
+                        if (userName != null && !userName.trim().isEmpty()) {
+                            userNamesMap.put(userId, userName);
+                            for (Review review : allReviews) {
+                                if (review.getUserId().equals(userId)) {
+                                    review.setUserName(userName);
+                                }
+                            }
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading user batch", e);
+                });
+        }
     }
 
     private void loadRestaurants() {
@@ -223,16 +274,36 @@ public class HomeFragment extends Fragment {
 
     private void filterReviews(String query) {
         if (reviewAdapter != null) {
-            // Simple filtering based on review content
+            // Enhanced filtering based on review content, user names, and restaurant names
             List<Review> filteredReviews = new ArrayList<>();
             if (query == null || query.trim().isEmpty()) {
                 filteredReviews.addAll(allReviews);
             } else {
                 String lowerCaseQuery = query.toLowerCase().trim();
                 for (Review review : allReviews) {
-                    if ((review.getDescription() != null && review.getDescription().toLowerCase().contains(lowerCaseQuery)) ||
-                        (review.getCaption() != null && review.getCaption().toLowerCase().contains(lowerCaseQuery)) ||
-                        (review.getRestaurantName() != null && review.getRestaurantName().toLowerCase().contains(lowerCaseQuery))) {
+                    boolean matches = false;
+                    
+                    // Search in description
+                    if (review.getDescription() != null && review.getDescription().toLowerCase().contains(lowerCaseQuery)) {
+                        matches = true;
+                    }
+                    
+                    // Search in caption
+                    if (!matches && review.getCaption() != null && review.getCaption().toLowerCase().contains(lowerCaseQuery)) {
+                        matches = true;
+                    }
+                    
+                    // Search in restaurant name
+                    if (!matches && review.getRestaurantName() != null && review.getRestaurantName().toLowerCase().contains(lowerCaseQuery)) {
+                        matches = true;
+                    }
+                    
+                    // Search in user name
+                    if (!matches && review.getUserName() != null && review.getUserName().toLowerCase().contains(lowerCaseQuery)) {
+                        matches = true;
+                    }
+                    
+                    if (matches) {
                         filteredReviews.add(review);
                     }
                 }
