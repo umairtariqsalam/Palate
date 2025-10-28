@@ -29,6 +29,7 @@ import com.example.food.data.Review;
 import com.example.food.data.CrowdFeedback;
 import com.example.food.dialogs.ReviewDetailsDialog;
 import com.example.food.service.CrowdDensityService;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 // FragmentManager and FragmentTransaction no longer needed, simplified map initialization
 
@@ -62,6 +63,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private PlacesClient placesClient;
     private FirebaseFirestore db;
     private CrowdDensityService crowdDensityService;
+    private FirebaseAuth mAuth;
     
     // Zoom in/out buttons
     private ImageButton btnZoomIn;
@@ -109,6 +111,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         // Initialize Firebase Firestore
         db = FirebaseFirestore.getInstance();
         crowdDensityService = new CrowdDensityService();
+        mAuth = FirebaseAuth.getInstance();
 
         // Simplified map initialization
         SupportMapFragment mapFragment = SupportMapFragment.newInstance();
@@ -389,8 +392,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
      */
     private void submitCrowdFeedback(String restaurantId, int crowdingLevel, View indicator, 
                                    TextView status, TextView description, TextView feedbackCount) {
-        // Get current user ID (you may need to implement this based on your auth system)
-        String currentUserId = "anonymous_user"; // Replace with actual user ID
+        // Get current user ID from Firebase Auth
+        if (mAuth.getCurrentUser() == null) {
+            Toast.makeText(requireContext(), "Please login to submit feedback", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String currentUserId = mAuth.getCurrentUser().getUid();
         
         crowdDensityService.submitFeedback(restaurantId, currentUserId, crowdingLevel, 
             new CrowdDensityService.FeedbackSubmitCallback() {
