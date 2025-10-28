@@ -173,7 +173,7 @@ public class CrowdDensityService {
                 if (hasRecentFeedback) {
                     // User has already submitted feedback recently
                     Log.w(TAG, "User " + userId + " already submitted feedback recently");
-                    callback.onError(new Exception("Please wait before submitting another feedback"));
+                    callback.onError(new Exception("You cannot resubmit within 15 minutes!"));
                     return;
                 }
                 
