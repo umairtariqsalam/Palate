@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Food"
+rootProject.name = "Palate"
 include(":app")
