@@ -82,6 +82,26 @@ public class MainActivity extends AppCompatActivity {
         // Auto-upload functionality deleted, now only loads data from Firebase
     }
     
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra("open_restaurant_id")) {
+            String restaurantId = intent.getStringExtra("open_restaurant_id");
+            // Select map tab and deliver the restaurantId to MapFragment
+            BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
+            bottomNav.setSelectedItemId(R.id.nav_map);
+            // Attach restaurant ID as argument
+            MapFragment mapFragment = new MapFragment();
+            Bundle args = new Bundle();
+            args.putString("open_restaurant_id", restaurantId);
+            mapFragment.setArguments(args);
+            switchFragment(mapFragment);
+            // clear so it doesn't repeat
+            intent.removeExtra("open_restaurant_id");
+        }
+    }
+
     // Upload functionality deleted, now only loads data from Firebase
 
     private void setupSystemBars() {

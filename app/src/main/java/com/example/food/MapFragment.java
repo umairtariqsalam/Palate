@@ -119,6 +119,28 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 .replace(R.id.map_container, mapFragment)
                 .commit();
         mapFragment.getMapAsync(this);
+
+        // if special restaurant id argument then open details as soon as ready
+        Bundle args = getArguments();
+        if (args != null && args.containsKey("open_restaurant_id")) {
+            String targetRestaurantId = args.getString("open_restaurant_id");
+            if (targetRestaurantId != null) {
+                // Fetch from Firestore and show bottom sheet
+                db.collection("restaurants").document(targetRestaurantId)
+                    .get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc.exists()) {
+                            Restaurant restaurant = doc.toObject(Restaurant.class);
+                            if (restaurant != null) {
+                                restaurant.setId(doc.getId());
+                                showRestaurantPostsBottomSheet(restaurant);
+                            }
+                        }
+                    });
+                // Remove the argument so it doesnt repeat
+                args.remove("open_restaurant_id");
+            }
+        }
     }
 
     @Override

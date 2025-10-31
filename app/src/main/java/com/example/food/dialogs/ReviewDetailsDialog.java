@@ -719,8 +719,18 @@ public class ReviewDetailsDialog extends Dialog {
                 openDirections();
                 return true;
             } else if (itemId == R.id.action_search_restaurant) {
-                // TODO: Implement search restaurant functionality
-                Toast.makeText(getContext(), "Search restaurant feature coming soon", Toast.LENGTH_SHORT).show();
+                // Open MapFragment and have it open this restaurant sheet
+                if (restaurant != null && restaurant.getId() != null) {
+                    android.content.Intent intent = new android.content.Intent(getContext(), com.example.food.MainActivity.class);
+                    intent.putExtra("open_restaurant_id", restaurant.getId());
+                    getContext().startActivity(intent);
+                } else if (review != null && review.getRestaurantId() != null) {
+                    android.content.Intent intent = new android.content.Intent(getContext(), com.example.food.MainActivity.class);
+                    intent.putExtra("open_restaurant_id", review.getRestaurantId());
+                    getContext().startActivity(intent);
+                } else {
+                    Toast.makeText(getContext(), "No restaurant data found", Toast.LENGTH_SHORT).show();
+                }
                 return true;
             } else if (itemId == R.id.action_delete_post) {
                 // Double check: only allow deletion if user is the author
