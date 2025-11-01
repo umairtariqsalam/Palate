@@ -244,8 +244,9 @@ public class AddFragment extends Fragment {
         }
         
         ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), 
-            android.R.layout.simple_dropdown_item_1line, restaurantNames);
+            R.layout.simple_dropdown_item_white, restaurantNames);
         etRestaurantSearch.setAdapter(adapter);
+        etRestaurantSearch.setDropDownBackgroundDrawable(ContextCompat.getDrawable(getContext(), R.drawable.rounded_background));
     }
     
     private Restaurant findRestaurantByName(String name) {

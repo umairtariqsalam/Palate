@@ -4,16 +4,21 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.TextView;
 import android.widget.ImageButton;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+import android.widget.ImageView;
+import android.widget.AutoCompleteTextView;
+import android.widget.ArrayAdapter;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -30,8 +35,8 @@ import com.example.food.data.CrowdFeedback;
 import com.example.food.dialogs.ReviewDetailsDialog;
 import com.example.food.service.CrowdDensityService;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
-// FragmentManager and FragmentTransaction no longer needed, simplified map initialization
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -53,7 +58,9 @@ import com.example.food.model.Restaurant;
 // FirebaseDataUploader removed, no longer need upload functionality
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MapFragment extends Fragment implements OnMapReadyCallback {
 
@@ -65,12 +72,20 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private CrowdDensityService crowdDensityService;
     private FirebaseAuth mAuth;
     
-    // Zoom in/out buttons
+    // Map control buttons
     private ImageButton btnZoomIn;
     private ImageButton btnZoomOut;
+    private ImageButton btnMyLocation;
 
     // High-rated restaurant data
     private List<Restaurant> highRatedRestaurants;
+    
+    // Restaurant search
+    private AutoCompleteTextView etRestaurantSearch;
+    private List<Restaurant> restaurants;
+    
+    // Store markers with restaurant IDs for color updates
+    private Map<String, Marker> restaurantMarkers;
 
     private final ActivityResultLauncher<String[]> permissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
@@ -79,7 +94,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 if (fine || coarse) {
                     enableMyLocationAndLoad();
                 } else {
-                    Toast.makeText(requireContext(), "Location permission denied", Toast.LENGTH_SHORT).show();
+                    android.content.Context context = getContext();
+                    if (context != null && isAdded()) {
+                        Toast.makeText(context, "Location permission denied", Toast.LENGTH_SHORT).show();
+                    }
                 }
             });
 
@@ -93,13 +111,20 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Initialize zoom in/out buttons
+        // Initialize map control buttons
         btnZoomIn = view.findViewById(R.id.btn_zoom_in);
         btnZoomOut = view.findViewById(R.id.btn_zoom_out);
+        btnMyLocation = view.findViewById(R.id.btn_my_location);
         
         // Set button click listeners
         btnZoomIn.setOnClickListener(v -> zoomIn());
         btnZoomOut.setOnClickListener(v -> zoomOut());
+        btnMyLocation.setOnClickListener(v -> moveToMyLocation());
+        
+        // Initialize restaurant search
+        etRestaurantSearch = view.findViewById(R.id.et_restaurant_search);
+        restaurants = new ArrayList<>();
+        restaurantMarkers = new HashMap<>();
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
 
@@ -119,6 +144,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 .replace(R.id.map_container, mapFragment)
                 .commit();
         mapFragment.getMapAsync(this);
+        
+        // Load restaurants for search
+        loadRestaurants();
 
         // if special restaurant id argument then open details as soon as ready
         Bundle args = getArguments();
@@ -146,7 +174,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onMapReady(@NonNull GoogleMap map) {
         this.googleMap = map;
-        googleMap.getUiSettings().setMyLocationButtonEnabled(true);
+        googleMap.getUiSettings().setMyLocationButtonEnabled(false);
         googleMap.getUiSettings().setMapToolbarEnabled(false);
         googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         
@@ -192,7 +220,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         }
         
         // Show loading prompt
-        Toast.makeText(requireContext(), "Loading restaurant data from Firebase...", Toast.LENGTH_SHORT).show();
+        android.content.Context context = getContext();
+        if (context != null) {
+            Toast.makeText(context, "Loading restaurant data from Firebase...", Toast.LENGTH_SHORT).show();
+        }
         
         Log.d(TAG, "Starting to load restaurant data from Firebase...");
         
@@ -201,43 +232,58 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     Log.d(TAG, "Firebase connection successful, document count: " + queryDocumentSnapshots.size());
                     
+                    if (!isAdded() || getContext() == null) {
+                        return;
+                    }
+                    
+                    android.content.Context callbackContext = getContext();
                     if (queryDocumentSnapshots.isEmpty()) {
                         // No data in Firebase
                         Log.d(TAG, "No restaurant data in Firebase");
-                        Toast.makeText(requireContext(), "No restaurant data in Firebase, please wait for data upload to complete", Toast.LENGTH_LONG).show();
+                        Toast.makeText(callbackContext, "No restaurant data in Firebase, please wait for data upload to complete", Toast.LENGTH_LONG).show();
                     } else {
                         // Data exists in Firebase, load and display
-                        List<Restaurant> restaurants = new ArrayList<>();
+                        List<Restaurant> restaurantsList = new ArrayList<>();
                         for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                             try {
                                 Restaurant restaurant = document.toObject(Restaurant.class);
                                 restaurant.setId(document.getId());
-                                restaurants.add(restaurant);
+                                restaurantsList.add(restaurant);
                                 
-                                // Add map marker
-                                LatLng position = new LatLng(restaurant.getLatitude(), restaurant.getLongitude());
-                                MarkerOptions markerOptions = new MarkerOptions()
-                                        .position(position)
-                                        .title(restaurant.getName())
-                                        .snippet(restaurant.getAddress())
-                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
-                                
-                                Marker marker = googleMap.addMarker(markerOptions);
-                                if (marker != null) {
-                                    marker.setTag(restaurant);
+                                // Add map marker with default green color (will be updated based on crowd density)
+                                if (googleMap != null) {
+                                    LatLng position = new LatLng(restaurant.getLatitude(), restaurant.getLongitude());
+                                    MarkerOptions markerOptions = new MarkerOptions()
+                                            .position(position)
+                                            .title(restaurant.getName())
+                                            .snippet(restaurant.getAddress())
+                                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
+                                    
+                                    Marker marker = googleMap.addMarker(markerOptions);
+                                    if (marker != null) {
+                                        marker.setTag(restaurant);
+                                        restaurantMarkers.put(restaurant.getId(), marker);
+                                    }
                                 }
                             } catch (Exception e) {
                                 Log.e(TAG, "Failed to parse restaurant data: " + document.getId(), e);
                             }
                         }
                         
-                        Log.d(TAG, "Successfully loaded " + restaurants.size() + " restaurants");
-                        Toast.makeText(requireContext(), "Loaded " + restaurants.size() + " highly-rated restaurants from Firebase", Toast.LENGTH_SHORT).show();
+                        // Load crowd density for each restaurant and update marker colors
+                        for (Restaurant restaurant : restaurantsList) {
+                            loadCrowdDensityForMarker(restaurant.getId());
+                        }
+                        
+                        Log.d(TAG, "Successfully loaded " + restaurantsList.size() + " restaurants");
+                        Toast.makeText(callbackContext, "Loaded " + restaurantsList.size() + " highly-rated restaurants from Firebase", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Firebase loading failed", e);
-                    Toast.makeText(requireContext(), "Firebase connection failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    if (isAdded() && getContext() != null) {
+                        Toast.makeText(getContext(), "Firebase connection failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
                 });
     }
 
@@ -245,7 +291,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
      * Show bottom sheet with posts related to the restaurant
      */
     private void showRestaurantPostsBottomSheet(Restaurant restaurant) {
-        BottomSheetDialog bottomSheet = new BottomSheetDialog(requireContext());
+        if (!isAdded() || getContext() == null) {
+            return;
+        }
+        BottomSheetDialog bottomSheet = new BottomSheetDialog(getContext());
         View view = getLayoutInflater().inflate(R.layout.bottom_sheet_restaurant_posts, null);
         bottomSheet.setContentView(view);
 
@@ -256,6 +305,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         RecyclerView rvPosts = view.findViewById(R.id.rv_posts);
         TextView tvNoPosts = view.findViewById(R.id.tv_no_posts);
         androidx.appcompat.widget.AppCompatButton btnNavigate = view.findViewById(R.id.btn_navigate);
+        ImageView btnClose = view.findViewById(R.id.btn_close);
         
         // Crowd density views
         LinearLayout llCrowdDensity = view.findViewById(R.id.ll_crowd_density);
@@ -287,6 +337,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             navigateToRestaurant(restaurant);
             bottomSheet.dismiss();
         });
+        
+        // Set up close button click listener
+        btnClose.setOnClickListener(v -> bottomSheet.dismiss());
 
         // Setup RecyclerView
         List<Review> reviews = new ArrayList<>();
@@ -294,21 +347,45 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             @Override
             public void onReviewClick(Review review, Restaurant restaurantData) {
                 // Open review details dialog
-                ReviewDetailsDialog dialog = new ReviewDetailsDialog(requireContext(), review, restaurantData);
-                dialog.show();
-                bottomSheet.dismiss();
+                android.content.Context context = getContext();
+                if (context != null && isAdded()) {
+                    ReviewDetailsDialog dialog = new ReviewDetailsDialog(context, review, restaurantData);
+                    dialog.show();
+                    bottomSheet.dismiss();
+                }
             }
             
             @Override
             public void onUserClick(String userId) {
-                // Navigate to user profile
-                Intent intent = new Intent(getActivity(), UserProfileActivity.class);
-                intent.putExtra("userId", userId);
-                startActivity(intent);
+                FirebaseAuth auth = FirebaseAuth.getInstance();
+                if (auth.getCurrentUser() == null) return;
+                
+                bottomSheet.dismiss();
+                
+                if (getActivity() != null && getActivity() instanceof MainActivity) {
+                    if (userId.equals(auth.getCurrentUser().getUid())) {
+                        // navigate to own profile using bottom nav
+                        BottomNavigationView bottomNav = getActivity().findViewById(R.id.bottom_nav);
+                        if (bottomNav != null) {
+                            bottomNav.setSelectedItemId(R.id.nav_profile);
+                        }
+                    } else {
+                        // view someone else's profile
+                        ProfileFragment profileFragment = ProfileFragment.newInstance(userId);
+                        getActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, profileFragment)
+                            .addToBackStack(null)
+                            .commit();
+                    }
+                }
             }
         });
-        rvPosts.setLayoutManager(new LinearLayoutManager(requireContext()));
-        rvPosts.setAdapter(adapter);
+        android.content.Context context = getContext();
+        if (context != null) {
+            rvPosts.setLayoutManager(new LinearLayoutManager(context));
+            rvPosts.setAdapter(adapter);
+        }
 
         // Load reviews for this restaurant
         loadRestaurantReviews(restaurant.getId(), adapter, rvPosts, tvNoPosts, tvPostsCount);
@@ -348,12 +425,111 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 } else {
                     tvNoPosts.setVisibility(View.GONE);
                     rvPosts.setVisibility(View.VISIBLE);
+                    // Load user info for reviews to properly display names and avatars
+                    loadUserInfoForReviews(reviews, adapter);
                 }
             })
             .addOnFailureListener(e -> {
                 Log.e(TAG, "Error loading restaurant reviews", e);
-                Toast.makeText(requireContext(), "Failed to load reviews", Toast.LENGTH_SHORT).show();
+                if (isAdded() && getContext() != null) {
+                    Toast.makeText(getContext(), "Failed to load reviews", Toast.LENGTH_SHORT).show();
+                }
             });
+    }
+    
+    // Load crowd density for marker and update color
+    private void loadCrowdDensityForMarker(String restaurantId) {
+        if (!isAdded() || googleMap == null) {
+            return;
+        }
+        
+        crowdDensityService.calculateCrowdDensity(restaurantId, new CrowdDensityService.CrowdDensityCallback() {
+            @Override
+            public void onSuccess(CrowdDensityService.CrowdDensityResult result) {
+                // Update marker color on main thread
+                android.app.Activity activity = getActivity();
+                if (activity != null && isAdded()) {
+                    activity.runOnUiThread(() -> {
+                        if (!isAdded() || googleMap == null) {
+                            return;
+                        }
+                        
+                        Marker marker = restaurantMarkers.get(restaurantId);
+                        if (marker != null) {
+                            // Set marker color based on crowding level
+                            float markerHue;
+                            int crowdingLevel = result.getCrowdingLevel();
+                            
+                            // 3 = Very Crowded (red), 2 = Moderately Crowded (yellow), 1 = Not Crowded (green), 0 = No Data (green)
+                            if (crowdingLevel == 3) {
+                                markerHue = BitmapDescriptorFactory.HUE_RED;
+                            } else if (crowdingLevel == 2) {
+                                markerHue = BitmapDescriptorFactory.HUE_YELLOW;
+                            } else {
+                                // Level 1 (not crowded) or 0 (no data) = green
+                                markerHue = BitmapDescriptorFactory.HUE_GREEN;
+                            }
+                            
+                            marker.setIcon(BitmapDescriptorFactory.defaultMarker(markerHue));
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onError(Exception e) {
+                // On error, keep default green color
+                Log.e(TAG, "Error loading crowd density for marker: " + restaurantId, e);
+            }
+        });
+    }
+    
+    // Load user info for reviews
+    private void loadUserInfoForReviews(List<Review> reviews, ReviewWidgetAdapter adapter) {
+        if (reviews.isEmpty() || !isAdded()) return;
+        
+        // Get unique user IDs
+        java.util.Set<String> userIds = new java.util.HashSet<>();
+        for (Review review : reviews) {
+            if (review.getUserId() != null) {
+                userIds.add(review.getUserId());
+            }
+        }
+        
+        // Load user information for each unique user
+        for (String userId : userIds) {
+            db.collection("users").document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists() && isAdded()) {
+                        String userName = documentSnapshot.getString("name");
+                        if (userName == null || userName.trim().isEmpty()) {
+                            userName = documentSnapshot.getString("username");
+                        }
+                        String userAvatarUrl = documentSnapshot.getString("avatarUrl");
+                        
+                        // Update all reviews for this user
+                        for (Review review : reviews) {
+                            if (userId.equals(review.getUserId())) {
+                                if (userName != null && !userName.trim().isEmpty()) {
+                                    review.setUserName(userName);
+                                }
+                                if (userAvatarUrl != null && !userAvatarUrl.trim().isEmpty()) {
+                                    review.setUserAvatarUrl(userAvatarUrl);
+                                }
+                            }
+                        }
+                        
+                        // Notify adapter of changes
+                        if (adapter != null) {
+                            adapter.notifyDataSetChanged();
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading user info for user: " + userId, e);
+                });
+        }
     }
     
     // Zoom in functionality
@@ -369,6 +545,112 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             googleMap.animateCamera(CameraUpdateFactory.zoomOut());
         }
     }
+    
+    // Move to my location
+    private void moveToMyLocation() {
+        if (googleMap == null || fusedLocationClient == null || !isAdded() || getContext() == null) {
+            return;
+        }
+        
+        android.content.Context context = getContext();
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            try {
+                fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
+                    if (location != null && googleMap != null && isAdded()) {
+                        LatLng myLocation = new LatLng(location.getLatitude(), location.getLongitude());
+                        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(myLocation, 15f));
+                    }
+                });
+            } catch (SecurityException e) {
+                Log.e(TAG, "Error getting location", e);
+            }
+        } else {
+            permissionLauncher.launch(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION});
+        }
+    }
+    
+    // Load restaurants for search
+    private void loadRestaurants() {
+        db.collection("restaurants")
+            .get()
+            .addOnSuccessListener(queryDocumentSnapshots -> {
+                if (!isAdded() || getContext() == null) {
+                    return;
+                }
+                restaurants.clear();
+                for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                    Restaurant restaurant = document.toObject(Restaurant.class);
+                    if (restaurant != null) {
+                        restaurant.setId(document.getId());
+                        restaurants.add(restaurant);
+                    }
+                }
+                setupRestaurantSearch();
+            })
+            .addOnFailureListener(e -> {
+                Log.e(TAG, "Error loading restaurants", e);
+                if (isAdded() && getContext() != null) {
+                    Toast.makeText(getContext(), "Failed to load restaurants", Toast.LENGTH_SHORT).show();
+                }
+            });
+    }
+    
+    // Setup restaurant search adapter
+    private void setupRestaurantSearch() {
+        if (!isAdded() || getContext() == null || etRestaurantSearch == null) {
+            return;
+        }
+        
+        List<String> restaurantNames = new ArrayList<>();
+        for (Restaurant restaurant : restaurants) {
+            restaurantNames.add(restaurant.getName());
+        }
+        
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), 
+            R.layout.simple_dropdown_item_white, restaurantNames);
+        etRestaurantSearch.setAdapter(adapter);
+        etRestaurantSearch.setDropDownBackgroundDrawable(ContextCompat.getDrawable(getContext(), R.drawable.rounded_background));
+        
+        // Handle restaurant selection
+        etRestaurantSearch.setOnItemClickListener((parent, view, position, id) -> {
+            String selectedName = (String) parent.getItemAtPosition(position);
+            Restaurant selectedRestaurant = findRestaurantByName(selectedName);
+            if (selectedRestaurant != null) {
+                navigateToRestaurantOnMap(selectedRestaurant);
+            }
+        });
+    }
+    
+    // Find restaurant by name
+    private Restaurant findRestaurantByName(String name) {
+        for (Restaurant restaurant : restaurants) {
+            if (restaurant.getName().equals(name)) {
+                return restaurant;
+            }
+        }
+        return null;
+    }
+    
+    // Navigate to restaurant on map
+    private void navigateToRestaurantOnMap(Restaurant restaurant) {
+        if (googleMap == null) {
+            return;
+        }
+        
+        LatLng position = new LatLng(restaurant.getLatitude(), restaurant.getLongitude());
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(position, 15f));
+        
+        // Show bottom sheet after a short delay to allow camera animation
+        View view = getView();
+        if (view != null) {
+            view.postDelayed(() -> {
+                if (isAdded()) {
+                    showRestaurantPostsBottomSheet(restaurant);
+                }
+            }, 100);
+        }
+    }
 
     /**
      * Load and display crowd density for a restaurant
@@ -379,32 +661,43 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             @Override
             public void onSuccess(CrowdDensityService.CrowdDensityResult result) {
                 // Update UI on main thread
-                requireActivity().runOnUiThread(() -> {
-                    // Set indicator color
-                    int colorResId = result.getColorResId();
-                    indicator.setBackgroundColor(ContextCompat.getColor(requireContext(), colorResId));
-                    
-                    // Set status text
-                    status.setText(result.getStatusText());
-                    description.setText(result.getDescription());
-                    
-                    // Set feedback count
-                    if (result.hasRecentData()) {
-                        feedbackCount.setText(result.getFeedbackCount() + " feedbacks");
-                    } else {
-                        feedbackCount.setText("No recent data");
-                    }
-                });
+                android.app.Activity activity = getActivity();
+                if (activity != null && isAdded()) {
+                    activity.runOnUiThread(() -> {
+                        if (!isAdded() || getContext() == null) {
+                            return;
+                        }
+                        // Set indicator color
+                        int colorResId = result.getColorResId();
+                        indicator.setBackgroundColor(ContextCompat.getColor(getContext(), colorResId));
+                        
+                        // Set status text
+                        status.setText(result.getStatusText());
+                        description.setText(result.getDescription());
+                        
+                        // Set feedback count
+                        if (result.hasRecentData()) {
+                            feedbackCount.setText(result.getFeedbackCount() + " feedbacks");
+                        } else {
+                            feedbackCount.setText("No recent data");
+                        }
+                    });
+                }
             }
 
             @Override
             public void onError(Exception e) {
                 Log.e(TAG, "Error loading crowd density", e);
-                requireActivity().runOnUiThread(() -> {
-                    status.setText("Error loading status");
-                    description.setText("Please try again later");
-                    feedbackCount.setText("Error");
-                });
+                android.app.Activity activity = getActivity();
+                if (activity != null && isAdded()) {
+                    activity.runOnUiThread(() -> {
+                        if (isAdded()) {
+                            status.setText("Error loading status");
+                            description.setText("Please try again later");
+                            feedbackCount.setText("Error");
+                        }
+                    });
+                }
             }
         });
     }
@@ -416,7 +709,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                                    TextView status, TextView description, TextView feedbackCount) {
         // Get current user ID from Firebase Auth
         if (mAuth.getCurrentUser() == null) {
-            Toast.makeText(requireContext(), "Please login to submit feedback", Toast.LENGTH_SHORT).show();
+            android.content.Context context = getContext();
+            if (context != null && isAdded()) {
+                Toast.makeText(context, "Please login to submit feedback", Toast.LENGTH_SHORT).show();
+            }
             return;
         }
         String currentUserId = mAuth.getCurrentUser().getUid();
@@ -425,24 +721,38 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             new CrowdDensityService.FeedbackSubmitCallback() {
                 @Override
                 public void onSuccess() {
-                    requireActivity().runOnUiThread(() -> {
-                        Toast.makeText(requireContext(), "Feedback submitted successfully!", Toast.LENGTH_SHORT).show();
-                        // Refresh crowd density display after successful submission
-                        loadCrowdDensity(restaurantId, indicator, status, description, feedbackCount);
-                    });
+                    android.app.Activity activity = getActivity();
+                    if (activity != null && isAdded()) {
+                        activity.runOnUiThread(() -> {
+                            android.content.Context context = getContext();
+                            if (context != null && isAdded()) {
+                                Toast.makeText(context, "Feedback submitted successfully!", Toast.LENGTH_SHORT).show();
+                                // Refresh crowd density display after successful submission
+                                loadCrowdDensity(restaurantId, indicator, status, description, feedbackCount);
+                                // Refresh the map marker color
+                                loadCrowdDensityForMarker(restaurantId);
+                            }
+                        });
+                    }
                 }
 
                 @Override
                 public void onError(Exception e) {
                     Log.e(TAG, "Error submitting feedback", e);
-                    requireActivity().runOnUiThread(() -> {
-                        String errorMessage = e.getMessage();
-                        if (errorMessage != null && errorMessage.contains("already submitted")) {
-                            Toast.makeText(requireContext(), "Please wait before submitting another feedback", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(requireContext(), "Failed to submit feedback: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                    android.app.Activity activity = getActivity();
+                    if (activity != null && isAdded()) {
+                        activity.runOnUiThread(() -> {
+                            android.content.Context context = getContext();
+                            if (context != null && isAdded()) {
+                                String errorMessage = e.getMessage();
+                                if (errorMessage != null && errorMessage.contains("already submitted")) {
+                                    Toast.makeText(context, "Please wait before submitting another feedback", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(context, "Failed to submit feedback: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                    }
                 }
             });
     }
@@ -451,6 +761,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
      * Navigate to restaurant using Google Maps
      */
     private void navigateToRestaurant(Restaurant restaurant) {
+        if (!isAdded() || getContext() == null) {
+            return;
+        }
+        
         try {
             // Create URI for Google Maps navigation
             String uri = String.format("google.navigation:q=%f,%f&mode=d", 
@@ -460,7 +774,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             intent.setPackage("com.google.android.apps.maps");
             
             // Check if Google Maps is installed
-            if (intent.resolveActivity(requireContext().getPackageManager()) != null) {
+            android.content.Context context = getContext();
+            if (context != null && intent.resolveActivity(context.getPackageManager()) != null) {
                 startActivity(intent);
             } else {
                 // Fallback to web browser if Google Maps app is not installed
@@ -471,9 +786,78 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             }
         } catch (Exception e) {
             Log.e(TAG, "Error opening navigation", e);
-            Toast.makeText(requireContext(), "Unable to open navigation, please check if Google Maps is installed", Toast.LENGTH_SHORT).show();
+            android.content.Context context = getContext();
+            if (context != null && isAdded()) {
+                Toast.makeText(context, "Unable to open navigation, please check if Google Maps is installed", Toast.LENGTH_SHORT).show();
+            }
         }
     }
     
-    // Upload functionality removed, now only load data from Firebase
+    
+    
+    // Make status bar transparent
+    private void makeStatusBarTransparent() {
+        android.app.Activity activity = getActivity();
+        if (activity != null) {
+            Window window = activity.getWindow();
+            if (window != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    window.setStatusBarColor(android.graphics.Color.TRANSPARENT);
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    int flags = window.getDecorView().getSystemUiVisibility();
+                    flags |= View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+                    flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                    window.getDecorView().setSystemUiVisibility(flags);
+                }
+            }
+        }
+    }
+    
+    // Restore default status bar
+    private void restoreStatusBar() {
+        android.app.Activity activity = getActivity();
+        if (activity != null && getContext() != null) {
+            Window window = activity.getWindow();
+            if (window != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    window.setStatusBarColor(ContextCompat.getColor(getContext(), R.color.white));
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    int flags = window.getDecorView().getSystemUiVisibility();
+                    // Remove fullscreen layout flags
+                    flags &= ~View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+                    flags &= ~View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
+                    // Keep light status bar
+                    flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                    window.getDecorView().setSystemUiVisibility(flags);
+                }
+            }
+        }
+    }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        makeStatusBarTransparent();
+    }
+    
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Restore default status bar when leaving map
+        restoreStatusBar();
+    }
+    
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (hidden) {
+            // Fragment is hidden, restore status bar
+            restoreStatusBar();
+        } else if (isAdded()) {
+            // Fragment is visible, make status bar transparent
+            makeStatusBarTransparent();
+        }
+    }
 }

@@ -1,31 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/background_light">
 
     <!-- Map container -->
     <FrameLayout
         android:id="@+id/map_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
 
-    <!-- Zoom in/out buttons container -->
+        />
+
+    <!-- Restaurant Search Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:orientation="vertical"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="16dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/restaurantInputLayout"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:textColorHint="@color/text_hint_light"
+                app:boxBackgroundMode="none"
+                app:hintEnabled="false"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <AutoCompleteTextView
+                    android:id="@+id/et_restaurant_search"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/fully_rounded_input_field_background"
+                    android:dropDownVerticalOffset="4dp"
+                    android:gravity="center_vertical|start"
+                    android:hint="@string/restaurant_search_hint"
+                    android:inputType="text"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp"
+                    android:textColor="@color/text_primary_light"
+                    android:textColorHint="@color/text_hint_light"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:drawableEnd="@drawable/ic_search"
+                    android:drawablePadding="12dp"
+                    android:completionThreshold="1" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </LinearLayout>
+
+    <!-- Map control buttons container -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:orientation="vertical"
-        android:background="@drawable/zoom_buttons_background">
+        android:elevation="8dp">
+
+        <!-- My location button -->
+        <ImageButton
+            android:id="@+id/btn_my_location"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/translucent_button_background"
+            android:src="@drawable/ic_my_location"
+            android:contentDescription="@string/my_location"
+            android:scaleType="centerInside"
+            android:padding="12dp" />
 
         <!-- Zoom in button -->
         <ImageButton
             android:id="@+id/btn_zoom_in"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="@drawable/zoom_button_background"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/translucent_button_background"
             android:src="@drawable/ic_zoom_in"
-            android:contentDescription="Zoom in"
+            android:contentDescription="@string/zoom_in"
             android:scaleType="centerInside"
             android:padding="12dp" />
 
@@ -34,12 +105,14 @@
             android:id="@+id/btn_zoom_out"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="@drawable/zoom_button_background"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/translucent_button_background"
             android:src="@drawable/ic_zoom_out"
-            android:contentDescription="Zoom out"
+            android:contentDescription="@string/zoom_out"
             android:scaleType="centerInside"
             android:padding="12dp" />
 
     </LinearLayout>
+
 
 </FrameLayout>

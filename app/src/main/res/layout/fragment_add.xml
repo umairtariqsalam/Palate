@@ -602,6 +602,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:background="@drawable/fully_rounded_input_field_background"
+                        android:dropDownVerticalOffset="4dp"
                         android:gravity="center_vertical|start"
                         android:hint="@string/restaurant_search_hint"
                         android:inputType="text"

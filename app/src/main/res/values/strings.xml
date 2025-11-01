@@ -313,9 +313,12 @@
     <string name="gallery">Gallery</string>
     <string name="caption_hint">Enter a short caption for your review</string>
     <string name="description_hint">Write a detailed description of your experience</string>
-    <string name="restaurant_search_hint">Search for a restaurant...</string>
+    <string name="restaurant_search_hint">Search for a restaurant…</string>
     <string name="submit_review">Submit Review</string>
     <string name="post_review">Post Review</string>
-    <string name="search_reviews">Search reviews, users...</string>
+    <string name="search_reviews">Search reviews, users…</string>
     <string name="user_name_placeholder">User</string>
+    <string name="my_location">My location</string>
+    <string name="zoom_in">Zoom in</string>
+    <string name="zoom_out">Zoom out</string>
 </resources>

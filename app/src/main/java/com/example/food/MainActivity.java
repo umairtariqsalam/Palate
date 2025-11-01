@@ -135,6 +135,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void switchFragment(Fragment fragment) {
+        // Restore status bar to default before switching (in case coming from map)
+        setupSystemBars();
+        
         FragmentManager fm = getSupportFragmentManager();
         FragmentTransaction tx = fm.beginTransaction();
         tx.replace(R.id.fragment_container, fragment);
