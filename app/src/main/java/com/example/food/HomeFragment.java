@@ -24,6 +24,8 @@ import com.example.food.data.Review;
 import com.example.food.dialogs.ReviewDetailsDialog;
 import com.example.food.model.Restaurant;
 import com.example.food.service.ReviewService;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -80,16 +82,32 @@ public class HomeFragment extends Fragment {
             @Override
             public void onReviewClick(Review review, Restaurant restaurant) {
                 // Open review details dialog
-                ReviewDetailsDialog dialog = new ReviewDetailsDialog(getContext(), review, restaurant);
+                ReviewDetailsDialog dialog = new ReviewDetailsDialog(getActivity(), review, restaurant);
                 dialog.show();
             }
             
             @Override
             public void onUserClick(String userId) {
-                // Navigate to user profile
-                Intent intent = new Intent(getActivity(), UserProfileActivity.class);
-                intent.putExtra("userId", userId);
-                startActivity(intent);
+                FirebaseAuth auth = FirebaseAuth.getInstance();
+                if (auth.getCurrentUser() == null) return;
+                
+                if (getActivity() != null && getActivity() instanceof MainActivity) {
+                    if (userId.equals(auth.getCurrentUser().getUid())) {
+                        // navigate to own profile using bottom nav
+                        BottomNavigationView bottomNav = getActivity().findViewById(R.id.bottom_nav);
+                        if (bottomNav != null) {
+                            bottomNav.setSelectedItemId(R.id.nav_profile);
+                        }
+                    } else {
+                        // view someone else's profile
+                        ProfileFragment profileFragment = ProfileFragment.newInstance(userId);
+                        getActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, profileFragment)
+                            .addToBackStack(null)
+                            .commit();
+                    }
+                }
             }
         });
         

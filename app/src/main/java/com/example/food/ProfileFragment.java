@@ -31,6 +31,7 @@ import com.example.food.data.UserProfile;
 import com.example.food.dialogs.ReviewDetailsDialog;
 import com.example.food.model.Restaurant;
 import com.example.food.services.UserStatsService;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -45,6 +46,8 @@ import java.util.Map;
 public class ProfileFragment extends Fragment {
 
     private static final String TAG = "ProfileFragment";
+    private static final String ARG_USER_ID = "user_id";
+    private static final String ARG_VIEW_MODE = "view_mode";
     
     // Views
     private de.hdodenhof.circleimageview.CircleImageView ivProfilePicture;
@@ -52,6 +55,8 @@ public class ProfileFragment extends Fragment {
     private RecyclerView rvReviews;
     private LinearLayout emptyState;
     private LinearLayout credibilityCard, experienceCard, engagementCard;
+    private android.widget.FrameLayout headerBar;
+    private ImageView btnBackProfile;
     
     // Tab views
     private TabLayout tabLayout;
@@ -76,6 +81,19 @@ public class ProfileFragment extends Fragment {
     private ListenerRegistration profileListener;
     private ListenerRegistration activityListener;
     private ProfileCacheManager cacheManager;
+    
+    // view mode control
+    private String targetUserId;
+    private boolean isViewingOtherUser;
+    
+    public static ProfileFragment newInstance(String userId) {
+        ProfileFragment fragment = new ProfileFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_USER_ID, userId);
+        args.putBoolean(ARG_VIEW_MODE, true);
+        fragment.setArguments(args);
+        return fragment;
+    }
 
     @Nullable
     @Override
@@ -86,6 +104,12 @@ public class ProfileFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        
+        // check if viewing another user's profile
+        if (getArguments() != null) {
+            targetUserId = getArguments().getString(ARG_USER_ID);
+            isViewingOtherUser = getArguments().getBoolean(ARG_VIEW_MODE, false);
+        }
         
         initViews(view);
         initFirebase();
@@ -114,6 +138,8 @@ public class ProfileFragment extends Fragment {
         tvEngagementScore = view.findViewById(R.id.tvEngagementScore);
         rvReviews = view.findViewById(R.id.rvReviews);
         emptyState = view.findViewById(R.id.emptyReviewsLayout);
+        headerBar = view.findViewById(R.id.headerBar);
+        btnBackProfile = view.findViewById(R.id.btnBackProfile);
         
         // Tab views
         tabLayout = view.findViewById(R.id.tabLayout);
@@ -123,10 +149,23 @@ public class ProfileFragment extends Fragment {
         rvActivity = view.findViewById(R.id.rvActivity);
         emptyActivityLayout = view.findViewById(R.id.emptyActivityLayout);
         
-        // Metric cards - engagement one removed for now in ui seems unnecessary
+        // Metric cards
         credibilityCard = view.findViewById(R.id.credibilityCard);
         experienceCard = view.findViewById(R.id.experienceCard);
         engagementCard = view.findViewById(R.id.engagementCard);
+        
+        // setup header bar for viewing others
+        if (headerBar != null) {
+            headerBar.setVisibility(isViewingOtherUser ? View.VISIBLE : View.GONE);
+        }
+        
+        if (btnBackProfile != null) {
+            btnBackProfile.setOnClickListener(v -> {
+                if (getActivity() != null) {
+                    getActivity().getSupportFragmentManager().popBackStack();
+                }
+            });
+        }
     }
 
     private void initFirebase() {
@@ -403,10 +442,25 @@ public class ProfileFragment extends Fragment {
             
             @Override
             public void onUserClick(String userId) {
-                // Navigate to user profile
-                Intent intent = new Intent(getActivity(), UserProfileActivity.class);
-                intent.putExtra("userId", userId);
-                startActivity(intent);
+                if (auth.getCurrentUser() == null) return;
+                
+                if (getActivity() != null && getActivity() instanceof MainActivity) {
+                    if (userId.equals(auth.getCurrentUser().getUid())) {
+                        // navigate to own profile using bottom nav
+                        BottomNavigationView bottomNav = getActivity().findViewById(R.id.bottom_nav);
+                        if (bottomNav != null) {
+                            bottomNav.setSelectedItemId(R.id.nav_profile);
+                        }
+                    } else {
+                        // view someone else's profile
+                        ProfileFragment profileFragment = ProfileFragment.newInstance(userId);
+                        getActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, profileFragment)
+                            .addToBackStack(null)
+                            .commit();
+                    }
+                }
             }
         }, false);
         
@@ -453,20 +507,40 @@ public class ProfileFragment extends Fragment {
     }
 
     private void setupTabLayout() {
+        // hide activity tab when viewing someone else's profile
+        if (isViewingOtherUser) {
+            TabLayout.Tab activityTab = tabLayout.getTabAt(1);
+            if (activityTab != null) {
+                tabLayout.removeTab(activityTab);
+            }
+        }
+        
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 int position = tab.getPosition();
-                switch (position) {
-                    case 0: // Reviews
-                        showReviewsTab();
-                        break;
-                    case 1: // Activity
-                        showActivityTab();
-                        break;
-                    case 2: // Analytics
-                        showAnalyticsTab();
-                        break;
+                if (isViewingOtherUser) {
+                    // only reviews and analytics when viewing others
+                    switch (position) {
+                        case 0:
+                            showReviewsTab();
+                            break;
+                        case 1:
+                            showAnalyticsTab();
+                            break;
+                    }
+                } else {
+                    switch (position) {
+                        case 0:
+                            showReviewsTab();
+                            break;
+                        case 1:
+                            showActivityTab();
+                            break;
+                        case 2:
+                            showAnalyticsTab();
+                            break;
+                    }
                 }
             }
 
@@ -477,7 +551,6 @@ public class ProfileFragment extends Fragment {
             public void onTabReselected(TabLayout.Tab tab) {}
         });
         
-        // Show reviews tab by default
         showReviewsTab();
     }
 
@@ -511,7 +584,9 @@ public class ProfileFragment extends Fragment {
             return;
         }
 
-        loadCachedData();
+        if (!isViewingOtherUser) {
+            loadCachedData();
+        }
         
         tvCredibilityScore.setText(getString(R.string.credibility_placeholder));
         tvExperienceScore.setText(getString(R.string.experience_placeholder));
@@ -531,20 +606,23 @@ public class ProfileFragment extends Fragment {
     private void loadUserProfileOnce() {
         if (auth.getCurrentUser() == null) return;
 
-        String userId = auth.getCurrentUser().getUid();
+        String userId = isViewingOtherUser ? targetUserId : auth.getCurrentUser().getUid();
         db.collection("users").document(userId)
             .get()
             .addOnSuccessListener(documentSnapshot -> {
                 if (documentSnapshot != null && documentSnapshot.exists()) {
                     userProfile = documentSnapshot.toObject(UserProfile.class);
                     if (userProfile != null) {
-                        cacheManager.cacheUserProfile(userProfile);
+                        if (!isViewingOtherUser) {
+                            cacheManager.cacheUserProfile(userProfile);
+                        }
                         updateUserUI();
                         UserStatsService.updateUserScores(userId);
                     }
                 } else {
-                    // Create default profile if doesn't exist
-                    createDefaultProfile();
+                    if (!isViewingOtherUser) {
+                        createDefaultProfile();
+                    }
                 }
             })
             .addOnFailureListener(e -> {
@@ -574,8 +652,8 @@ public class ProfileFragment extends Fragment {
     private void updateScoreDisplays() {
         if (auth.getCurrentUser() == null) return;
 
-        // always fetch fresh scores from firestore to ensure consistency
-        UserStatsService.getUserScores(auth.getCurrentUser().getUid(), new UserStatsService.OnScoresRetrievedListener() {
+        String userId = isViewingOtherUser ? targetUserId : auth.getCurrentUser().getUid();
+        UserStatsService.getUserScores(userId, new UserStatsService.OnScoresRetrievedListener() {
             @Override
             public void onScoresRetrieved(double credibilityScore, double experienceScore) {
                 if (getActivity() != null) {
@@ -652,7 +730,7 @@ public class ProfileFragment extends Fragment {
             return;
         }
 
-        String userId = auth.getCurrentUser().getUid();
+        String userId = isViewingOtherUser ? targetUserId : auth.getCurrentUser().getUid();
 
         reviewAdapter.setLoading(true);
 
@@ -740,16 +818,16 @@ public class ProfileFragment extends Fragment {
     }
 
     private void showReviewDetails(Review review, Restaurant restaurant) {
-        if (getContext() == null) return;
+        if (getActivity() == null) return;
         
-        ReviewDetailsDialog dialog = new ReviewDetailsDialog(getContext(), review, restaurant);
+        ReviewDetailsDialog dialog = new ReviewDetailsDialog(getActivity(), review, restaurant);
         dialog.show();
     }
     
     private void showReviewDetailsWithComments(Review review, Restaurant restaurant) {
-        if (getContext() == null) return;
+        if (getActivity() == null) return;
         
-        ReviewDetailsDialog dialog = new ReviewDetailsDialog(getContext(), review, restaurant);
+        ReviewDetailsDialog dialog = new ReviewDetailsDialog(getActivity(), review, restaurant);
         dialog.show();
         
         // Open comments section after a short delay so that dialog is fully loaded
@@ -782,13 +860,16 @@ public class ProfileFragment extends Fragment {
             return;
         }
 
+        // don't show activity for other users
+        if (isViewingOtherUser) {
+            showEmptyActivityState();
+            return;
+        }
+
         String userId = auth.getCurrentUser().getUid();
         activities.clear();
 
-        // Load initial activities
         loadInitialActivities(userId);
-        
-        // Set up real-time listener for activities
         setupActivityListener(userId);
     }
     
@@ -1273,8 +1354,7 @@ public class ProfileFragment extends Fragment {
             return;
         }
         
-        // Fetch fresh user data from Firestore
-        String userId = auth.getCurrentUser().getUid();
+        String userId = isViewingOtherUser ? targetUserId : auth.getCurrentUser().getUid();
         db.collection("users").document(userId)
             .get()
             .addOnSuccessListener(documentSnapshot -> {
@@ -1282,22 +1362,16 @@ public class ProfileFragment extends Fragment {
                     UserProfile freshProfile = documentSnapshot.toObject(UserProfile.class);
 
                     if (freshProfile != null) {
-                        
                         userProfile = freshProfile;
-                        cacheManager.cacheUserProfile(freshProfile);
-
-
-
-                        // Load analytics with fresh data
+                        if (!isViewingOtherUser) {
+                            cacheManager.cacheUserProfile(freshProfile);
+                        }
                         loadAnalyticsData();
                     }
                 }
             })
             .addOnFailureListener(e -> {
                 Log.e(TAG, "Error loading fresh analytics data", e);
-
-                // fallback to cached data if fresh data fails
-              
                 loadAnalyticsData();
             });
     }

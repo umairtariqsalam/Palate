@@ -2,6 +2,7 @@ package com.example.food.dialogs;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ClipDrawable;
@@ -23,6 +24,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentActivity;
 
 import java.util.ArrayList;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -59,7 +61,9 @@ public class ReviewDetailsDialog extends Dialog {
     // UI Components
     private ImageView btnClose;
     private ImageView btnMoreOptions;
+    private de.hdodenhof.circleimageview.CircleImageView ivAuthorAvatar;
     private TextView tvAuthorName;
+    private android.view.View userInfoButton;
     private TextView tvRestaurantName;
     private TextView tvRestaurantAddress;
     private TextView tvRestaurantCategory;
@@ -96,6 +100,20 @@ public class ReviewDetailsDialog extends Dialog {
         this.db = FirebaseFirestore.getInstance();
     }
 
+    
+     // Unwraps the themed dialog context until we find the hosting FragmentActivity.
+   
+    private FragmentActivity getHostActivity() {
+        Context context = getContext();
+        while (context instanceof ContextWrapper) {
+            if (context instanceof FragmentActivity) {
+                return (FragmentActivity) context;
+            }
+            context = ((ContextWrapper) context).getBaseContext();
+        }
+        return null;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -123,7 +141,9 @@ public class ReviewDetailsDialog extends Dialog {
     private void initViews() {
         // Header
         btnClose = findViewById(R.id.btnClose);
+        ivAuthorAvatar = findViewById(R.id.ivAuthorAvatar);
         tvAuthorName = findViewById(R.id.tvAuthorName);
+        userInfoButton = findViewById(R.id.userInfoButton);
         tvRestaurantName = findViewById(R.id.tvRestaurantName);
         tvRestaurantAddress = findViewById(R.id.tvRestaurantAddress);
         tvRestaurantCategory = findViewById(R.id.tvRestaurantCategory);
@@ -318,12 +338,32 @@ public class ReviewDetailsDialog extends Dialog {
                             tvAuthorName.setText(getContext().getString(R.string.username_placeholder));
                         }
                     }
+
+                    // Load avatar
+                    String avatarUrl = documentSnapshot.getString("avatarUrl");
+                    if (ivAuthorAvatar != null) {
+                        if (avatarUrl != null && !avatarUrl.trim().isEmpty()) {
+                            com.bumptech.glide.Glide.with(getContext())
+                                .load(avatarUrl)
+                                .placeholder(R.drawable.ic_person)
+                                .error(R.drawable.ic_person)
+                                .into(ivAuthorAvatar);
+                        } else {
+                            ivAuthorAvatar.setImageResource(R.drawable.ic_person);
+                        }
+                    }
                 } else {
                     tvAuthorName.setText(getContext().getString(R.string.username_placeholder));
+                    if (ivAuthorAvatar != null) {
+                        ivAuthorAvatar.setImageResource(R.drawable.ic_person);
+                    }
                 }
             })
             .addOnFailureListener(e -> {
                 tvAuthorName.setText(getContext().getString(R.string.username_placeholder));
+                if (ivAuthorAvatar != null) {
+                    ivAuthorAvatar.setImageResource(R.drawable.ic_person);
+                }
             });
     }
 
@@ -369,6 +409,15 @@ public class ReviewDetailsDialog extends Dialog {
         // Close button
         btnClose.setOnClickListener(v -> dismiss());
 
+        // User info button (avatar + name)
+        if (userInfoButton != null) {
+            userInfoButton.setOnClickListener(v -> {
+                if (review != null && review.getUserId() != null) {
+                    openUserProfile(review.getUserId());
+                }
+            });
+        }
+
         // Vote buttons
         btnAccurateIcon.setOnClickListener(v -> {
             // Start animation
@@ -392,6 +441,52 @@ public class ReviewDetailsDialog extends Dialog {
         // Caption expand/collapse
         if (btnExpandCaption != null) {
             btnExpandCaption.setOnClickListener(v -> toggleCaptionExpansion());
+        }
+        
+        // author name click to view profile
+        if (tvAuthorName != null) {
+            tvAuthorName.setOnClickListener(v -> {
+                if (review != null && review.getUserId() != null) {
+                    openUserProfile(review.getUserId());
+                }
+            });
+        }
+    }
+    
+    private void openUserProfile(String userId) {
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        if (auth.getCurrentUser() == null) {
+            Log.w(TAG, "Cannot open profile - user not logged in");
+            return;
+        }
+        
+        FragmentActivity activity = getHostActivity();
+        if (activity == null) {
+            Log.w(TAG, "Cannot open profile - context is not FragmentActivity");
+            return;
+        }
+        
+        if (userId.equals(auth.getCurrentUser().getUid())) {
+            // navigate to own profile using bottom nav
+            Log.d(TAG, "Opening own profile via bottom nav");
+            com.google.android.material.bottomnavigation.BottomNavigationView bottomNav = 
+                activity.findViewById(R.id.bottom_nav);
+            if (bottomNav != null) {
+                dismiss();
+                bottomNav.setSelectedItemId(R.id.nav_profile);
+            } else {
+                Log.e(TAG, "Bottom nav not found");
+            }
+        } else {
+            // view someone else's profile
+            Log.d(TAG, "Opening other user's profile: " + userId);
+            com.example.food.ProfileFragment profileFragment = com.example.food.ProfileFragment.newInstance(userId);
+            dismiss();
+            activity.getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, profileFragment)
+                .addToBackStack(null)
+                .commit();
         }
     }
 

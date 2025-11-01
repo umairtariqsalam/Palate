@@ -25,6 +25,54 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
+            <!-- header bar for viewing other profiles -->
+            <FrameLayout
+                android:id="@+id/headerBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:layout_marginBottom="12dp">
+
+                <ImageView
+                    android:id="@+id/btnBackProfile"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_arrow_back"
+                    android:padding="8dp"
+                    android:layout_gravity="start|center_vertical"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/back"
+                    app:tint="@color/profile_text_primary" />
+
+                <!-- app name centered -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Palate"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/logo_primary"
+                        android:fontFamily="sans-serif-medium" />
+                    
+                    <View
+                        android:layout_width="6dp"
+                        android:layout_height="6dp"
+                        android:background="@drawable/circle_background"
+                        android:backgroundTint="@color/logo_accent"
+                        android:layout_marginStart="-10dp"
+                        android:layout_marginTop="-10dp" />
+                        
+                </LinearLayout>
+
+            </FrameLayout>
+
             <!-- Profile Header -->
             <LinearLayout
                 android:layout_width="match_parent"
