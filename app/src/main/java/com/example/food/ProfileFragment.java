@@ -754,6 +754,7 @@ public class ProfileFragment extends Fragment {
                         try {
                             Review review = document.toObject(Review.class);
                             review.setId(document.getId());
+                            review.refreshAccuracyFromVotes(); // Calculate accuracy from votes
                             reviews.add(review);
                         } catch (Exception ex) {
                             Log.e(TAG, "Error parsing review document", ex);
@@ -821,6 +822,16 @@ public class ProfileFragment extends Fragment {
         if (getActivity() == null) return;
         
         ReviewDetailsDialog dialog = new ReviewDetailsDialog(getActivity(), review, restaurant);
+        dialog.setOnReviewUpdatedListener(updatedReview -> {
+            // Update the review in the list
+            for (int i = 0; i < reviews.size(); i++) {
+                if (reviews.get(i).getId().equals(updatedReview.getId())) {
+                    reviews.set(i, updatedReview);
+                    reviewAdapter.notifyItemChanged(i);
+                    break;
+                }
+            }
+        });
         dialog.show();
     }
     
@@ -828,6 +839,16 @@ public class ProfileFragment extends Fragment {
         if (getActivity() == null) return;
         
         ReviewDetailsDialog dialog = new ReviewDetailsDialog(getActivity(), review, restaurant);
+        dialog.setOnReviewUpdatedListener(updatedReview -> {
+            // Update the review in the list
+            for (int i = 0; i < reviews.size(); i++) {
+                if (reviews.get(i).getId().equals(updatedReview.getId())) {
+                    reviews.set(i, updatedReview);
+                    reviewAdapter.notifyItemChanged(i);
+                    break;
+                }
+            }
+        });
         dialog.show();
         
         // Open comments section after a short delay so that dialog is fully loaded
@@ -885,6 +906,7 @@ public class ProfileFragment extends Fragment {
                     try {
                         Review review = document.toObject(Review.class);
                         review.setId(document.getId());
+                        review.refreshAccuracyFromVotes(); // Calculate accuracy from votes
                         reviewMap.put(review.getId(), review);
                         
                         // Process votes - only show accurate votes
@@ -1005,6 +1027,7 @@ public class ProfileFragment extends Fragment {
                 try {
                     Review review = change.getDocument().toObject(Review.class);
                     review.setId(change.getDocument().getId());
+                    review.refreshAccuracyFromVotes(); // Calculate accuracy from votes
                     
                     Log.d(TAG, "Processing modified review: " + review.getId() + " with " + (review.getVotes() != null ? review.getVotes().size() : 0) + " votes");
                     

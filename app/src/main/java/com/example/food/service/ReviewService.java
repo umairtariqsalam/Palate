@@ -57,6 +57,7 @@ public class ReviewService {
                             try {
                                 Review review = document.toObject(Review.class);
                                 review.setId(document.getId());
+                                review.refreshAccuracyFromVotes(); // Calculate accuracy from votes
                                 reviews.add(review);
                             } catch (Exception e) {
                                 Log.w(TAG, "Error parsing review: " + document.getId(), e);
@@ -85,6 +86,7 @@ public class ReviewService {
                             try {
                                 Review review = document.toObject(Review.class);
                                 review.setId(document.getId());
+                                review.refreshAccuracyFromVotes(); // Calculate accuracy from votes
                                 reviews.add(review);
                             } catch (Exception e) {
                                 Log.w(TAG, "Error parsing review: " + document.getId(), e);
@@ -143,6 +145,7 @@ public class ReviewService {
                             try {
                                 Review review = document.toObject(Review.class);
                                 review.setId(document.getId());
+                                review.refreshAccuracyFromVotes(); // Calculate accuracy from votes
                                 reviews.add(review);
                             } catch (Exception e) {
                                 Log.w(TAG, "Error parsing review: " + document.getId(), e);

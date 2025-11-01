@@ -83,6 +83,16 @@ public class HomeFragment extends Fragment {
             public void onReviewClick(Review review, Restaurant restaurant) {
                 // Open review details dialog
                 ReviewDetailsDialog dialog = new ReviewDetailsDialog(getActivity(), review, restaurant);
+                dialog.setOnReviewUpdatedListener(updatedReview -> {
+                    // Find and update the review in the list
+                    for (int i = 0; i < allReviews.size(); i++) {
+                        if (allReviews.get(i).getId().equals(updatedReview.getId())) {
+                            allReviews.set(i, updatedReview);
+                            reviewAdapter.notifyItemChanged(i);
+                            break;
+                        }
+                    }
+                });
                 dialog.show();
             }
             

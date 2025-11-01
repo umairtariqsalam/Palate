@@ -557,12 +557,12 @@ public class AddFragment extends Fragment {
                 review.setCaption(caption);
                 review.setDescription(description);
                 review.setRating(rating);
-                review.setAccuracyPercent(accuracyPercent);
                 review.setImageUrls(imageUrls);
                 review.setFirstImageType(finalFirstImageType);
                 review.setCreatedAt(new Date()); // Use current date
                 review.setVotes(votes);
                 review.setComments(comments);
+                review.refreshAccuracyFromVotes(); // Calculate from votes (will be 0% for new review)
                 
                 // Save to Firebase
                 reviewService.saveReview(review, new ReviewService.ReviewSaveCallback() {
@@ -600,12 +600,12 @@ public class AddFragment extends Fragment {
                 review.setCaption(caption);
                 review.setDescription(description);
                 review.setRating(rating);
-                review.setAccuracyPercent(accuracyPercent);
                 review.setImageUrls(imageUrls);
                 review.setFirstImageType(finalFirstImageType);
                 review.setCreatedAt(new Date());
                 review.setVotes(votes);
                 review.setComments(comments);
+                review.refreshAccuracyFromVotes(); // Calculate from votes (will be 0% for new review)
                 
                 // Save to Firebase
                 reviewService.saveReview(review, new ReviewService.ReviewSaveCallback() {

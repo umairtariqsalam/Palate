@@ -343,13 +343,26 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
         // Setup RecyclerView
         List<Review> reviews = new ArrayList<>();
+        final ReviewWidgetAdapter[] adapterHolder = new ReviewWidgetAdapter[1];
         ReviewWidgetAdapter adapter = new ReviewWidgetAdapter(reviews, new ReviewWidgetAdapter.OnReviewClickListener() {
             @Override
             public void onReviewClick(Review review, Restaurant restaurantData) {
                 // Open review details dialog
                 android.content.Context context = getContext();
                 if (context != null && isAdded()) {
-                    ReviewDetailsDialog dialog = new ReviewDetailsDialog(context, review, restaurantData);
+                    ReviewDetailsDialog dialog = new ReviewDetailsDialog(context, review, restaurant);
+                    dialog.setOnReviewUpdatedListener(updatedReview -> {
+                        // Update the review in the adapter's list
+                        for (int i = 0; i < reviews.size(); i++) {
+                            if (reviews.get(i).getId().equals(updatedReview.getId())) {
+                                reviews.set(i, updatedReview);
+                                if (adapterHolder[0] != null) {
+                                    adapterHolder[0].notifyItemChanged(i);
+                                }
+                                break;
+                            }
+                        }
+                    });
                     dialog.show();
                     bottomSheet.dismiss();
                 }
@@ -381,9 +394,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 }
             }
         });
+        adapterHolder[0] = adapter;
         android.content.Context context = getContext();
         if (context != null) {
-            rvPosts.setLayoutManager(new LinearLayoutManager(context));
+            // Use staggered grid layout same as home page
+            androidx.recyclerview.widget.StaggeredGridLayoutManager layoutManager = 
+                new androidx.recyclerview.widget.StaggeredGridLayoutManager(2, androidx.recyclerview.widget.StaggeredGridLayoutManager.VERTICAL);
+            rvPosts.setLayoutManager(layoutManager);
             rvPosts.setAdapter(adapter);
         }
 
@@ -406,6 +423,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                     Review review = document.toObject(Review.class);
                     review.setId(document.getId());
+                    review.refreshAccuracyFromVotes(); // Calculate accuracy from votes
                     reviews.add(review);
                 }
 

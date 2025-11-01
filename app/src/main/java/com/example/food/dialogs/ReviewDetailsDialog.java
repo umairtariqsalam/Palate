@@ -92,12 +92,30 @@ public class ReviewDetailsDialog extends Dialog {
     // Data
     private String currentUserId;
     private Boolean currentUserVote;
+    private OnReviewUpdatedListener onReviewUpdatedListener;
+
+    public interface OnReviewUpdatedListener {
+        void onReviewUpdated(Review review);
+    }
 
     public ReviewDetailsDialog(@NonNull Context context, Review review, Restaurant restaurant) {
         super(context, R.style.FullScreenDialog);
         this.review = review;
         this.restaurant = restaurant;
         this.db = FirebaseFirestore.getInstance();
+    }
+
+    public void setOnReviewUpdatedListener(OnReviewUpdatedListener listener) {
+        this.onReviewUpdatedListener = listener;
+    }
+
+    @Override
+    public void dismiss() {
+        // Notify listener before dismissing
+        if (onReviewUpdatedListener != null) {
+            onReviewUpdatedListener.onReviewUpdated(review);
+        }
+        super.dismiss();
     }
 
     
@@ -274,30 +292,10 @@ public class ReviewDetailsDialog extends Dialog {
     }
 
     private void updateAccuracyDisplay() {
-        // Calculate accuracy dynamically from votes
-        double accuracy = calculateAccuracyFromVotes();
+        // Use the Review class's static utility to calculate accuracy
+        review.refreshAccuracyFromVotes();
+        double accuracy = review.getAccuracyPercent();
         tvDialogAccuracyPercent.setText(String.format(Locale.getDefault(), "%.0f%%", accuracy));
-
-        // Update the accuracy percent in the review object for consistency
-        review.setAccuracyPercent(accuracy);
-    }
-
-    private double calculateAccuracyFromVotes() {
-        if (review.getVotes() == null || review.getVotes().isEmpty()) {
-            return 0.0;
-        }
-
-        int accurateVotes = 0;
-        int totalVotes = review.getVotes().size();
-
-        for (Map<String, Object> voteData : review.getVotes().values()) {
-            Boolean vote = (Boolean) voteData.get("accurate");
-            if (vote != null && vote) {
-                accurateVotes++;
-            }
-        }
-
-        return totalVotes > 0 ? (accurateVotes * 100.0) / totalVotes : 0.0;
     }
 
     private void updateVoteDisplay() {

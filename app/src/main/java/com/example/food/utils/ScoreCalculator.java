@@ -158,6 +158,7 @@ public class ScoreCalculator {
                         try {
                             Review review = document.toObject(Review.class);
                             review.setId(document.getId());
+                            review.refreshAccuracyFromVotes(); // Calculate accuracy from votes
                             reviews.add(review);
                         } catch (Exception e) {
                             Log.e(TAG, "Error parsing review: " + document.getId(), e);

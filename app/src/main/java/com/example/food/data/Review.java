@@ -29,6 +29,9 @@ public class Review {
 
     public Review() {
         // Default constructor required for Firestore
+        this.votes = new java.util.HashMap<>();
+        this.comments = new java.util.ArrayList<>();
+        this.accuracyPercent = 0.0; // Default to 0% when no votes
     }
 
     public Review(String id, String userId, String userName, String restaurantId,
@@ -123,5 +126,36 @@ public class Review {
     //return true if the first image is horizontal, false otherwise
     public boolean isFirstImageHorizontal() {
         return "HORIZONTAL".equals(firstImageType);
+    }
+
+    /**
+     * Calculate and update accuracy percentage from votes map
+     * Call this method whenever votes change to keep accuracyPercent in sync
+     */
+    public void refreshAccuracyFromVotes() {
+        this.accuracyPercent = calculateAccuracyFromVotes(this.votes);
+    }
+
+    /**
+     * Static utility to calculate accuracy percentage from votes
+     * @param votes the votes map
+     * @return accuracy percentage (0-100)
+     */
+    public static double calculateAccuracyFromVotes(java.util.Map<String, java.util.Map<String, Object>> votes) {
+        if (votes == null || votes.isEmpty()) {
+            return 0.0;
+        }
+
+        int accurateVotes = 0;
+        int totalVotes = votes.size();
+
+        for (java.util.Map<String, Object> voteData : votes.values()) {
+            Boolean vote = (Boolean) voteData.get("accurate");
+            if (vote != null && vote) {
+                accurateVotes++;
+            }
+        }
+
+        return totalVotes > 0 ? (accurateVotes * 100.0) / totalVotes : 0.0;
     }
 }
