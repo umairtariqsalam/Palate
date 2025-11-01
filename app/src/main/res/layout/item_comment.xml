@@ -1,32 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:padding="16dp"
-    android:background="@color/white">
+    android:layout_marginStart="12dp"
+    android:layout_marginEnd="12dp"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/activity_card_background"
+    android:gravity="center_vertical">
 
-    <!-- User Avatar -->
-    <View
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:background="@drawable/circle_background"
-        android:layout_marginEnd="12dp" />
+    <!-- user avatar -->
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/iv_comment_avatar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@drawable/ic_person"
+        app:civ_border_width="2dp"
+        app:civ_border_color="@color/logo_primary"
+        android:scaleType="centerCrop" />
 
-    <!-- Comment Content -->
+    <!-- comment content -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="12dp">
 
-        <!-- Username and Time -->
+        <!-- username and time -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="4dp">
+            android:gravity="center_vertical">
 
             <TextView
                 android:id="@+id/tv_comment_username"
@@ -34,9 +43,12 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Username"
-                android:textSize="14sp"
+                android:textSize="15sp"
                 android:textStyle="bold"
-                android:textColor="@color/black" />
+                android:textColor="@color/profile_text_primary"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:ellipsize="end" />
 
             <TextView
                 android:id="@+id/tv_comment_time"
@@ -44,17 +56,21 @@
                 android:layout_height="wrap_content"
                 android:text="4h ago"
                 android:textSize="12sp"
-                android:textColor="#999999" />
+                android:textColor="@color/profile_text_tertiary"
+                android:fontFamily="sans-serif" />
         </LinearLayout>
 
-        <!-- Comment Text -->
+        <!-- comment text -->
         <TextView
             android:id="@+id/tv_comment_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:text="Comment content"
             android:textSize="14sp"
-            android:textColor="#333333" />
+            android:textColor="@color/profile_text_secondary"
+            android:fontFamily="sans-serif"
+            android:lineSpacingExtra="2dp" />
 
     </LinearLayout>
 

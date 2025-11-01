@@ -3,22 +3,28 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:paddingTop="20dp"
+    android:paddingBottom="48dp"
+    android:background="@color/white">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Comments"
         android:textStyle="bold"
-        android:textSize="16sp"
+        android:textSize="18sp"
         android:textColor="@color/profile_text_primary"
-        android:layout_marginBottom="12dp" />
+        android:fontFamily="sans-serif-medium"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvComments"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:nestedScrollingEnabled="false"
+        android:overScrollMode="never"
         android:layout_marginBottom="16dp" />
 
     <TextView
@@ -29,41 +35,47 @@
         android:textSize="14sp"
         android:textColor="@color/profile_text_tertiary"
         android:gravity="center"
-        android:padding="24dp"
+        android:padding="32dp"
         android:visibility="gone"
         android:layout_marginBottom="16dp" />
 
-    <!-- Comment Input Section -->
+    <!-- comment input section -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:background="@drawable/edittext_rounded"
-        android:padding="12dp">
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="8dp">
 
         <EditText
             android:id="@+id/etCommentInput"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@android:color/transparent"
-            android:hint="Add a comment..."
+            android:background="@drawable/fully_rounded_input_field_background"
+            android:hint="@string/add_a_comment"
             android:textSize="14sp"
             android:textColorHint="@color/text_hint_light"
             android:textColor="@color/text_primary_light"
             android:inputType="textMultiLine"
-            android:maxLines="3"
+            android:maxLines="4"
+            android:minHeight="48dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
             android:layout_marginEnd="8dp" />
 
         <ImageView
             android:id="@+id/btnSendComment"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:src="@drawable/ic_arrow_right"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:padding="4dp"
-            android:tint="@color/primary_color" />
+            android:background="@drawable/button_primary_background"
+            android:padding="12dp"
+            android:tint="@android:color/white" />
 
     </LinearLayout>
 

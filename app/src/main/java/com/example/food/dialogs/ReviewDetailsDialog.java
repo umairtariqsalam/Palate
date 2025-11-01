@@ -512,6 +512,40 @@ public class ReviewDetailsDialog extends Dialog {
             empty.setVisibility(View.VISIBLE);
         }
 
+        // change navigation bar color to white when bottom sheet opens
+        sheet.setOnShowListener(dialog -> {
+            // get the activity window to change system navigation bar
+            FragmentActivity activity = getHostActivity();
+            if (activity != null && activity.getWindow() != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Window activityWindow = activity.getWindow();
+                activityWindow.setNavigationBarColor(Color.WHITE);
+                // set light nav bar for white background
+                int flags = activityWindow.getDecorView().getSystemUiVisibility();
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                activityWindow.getDecorView().setSystemUiVisibility(flags);
+            }
+            
+            // also set bottom sheet window
+            Window sheetWindow = sheet.getWindow();
+            if (sheetWindow != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                sheetWindow.setNavigationBarColor(Color.WHITE);
+            }
+        });
+
+        // restore nav bar color when closed
+        sheet.setOnDismissListener(dialog -> {
+            // restore activity window navigation bar to match theme
+            FragmentActivity activity = getHostActivity();
+            if (activity != null && activity.getWindow() != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Window activityWindow = activity.getWindow();
+                activityWindow.setNavigationBarColor(activityWindow.getContext().getColor(R.color.white));
+                // restore light nav bar
+                int flags = activityWindow.getDecorView().getSystemUiVisibility();
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                activityWindow.getDecorView().setSystemUiVisibility(flags);
+            }
+        });
+
         // Set up comment input functionality
         btnSendComment.setOnClickListener(v -> {
             String commentText = etCommentInput.getText().toString().trim();
