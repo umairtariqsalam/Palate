@@ -1,35 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
-    android:width="64dp"
-    android:height="64dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
 
-    <!-- Orange "P" Logo with gradient -->
-    <path
-        android:pathData="M 36,24 L 36,76 Q 36,77 37,77 L 43,77 Q 44,77 44,76 L 44,60 L 56,60 Q 64,60 69,55 Q 74,50 74,42 Q 74,34 69,29 Q 64,24 56,24 L 36,24 Z M 44,32 L 55,32 Q 59,32 62,35 Q 65,38 65,42 Q 65,46 62,49 Q 59,52 55,52 L 44,52 L 44,32 Z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:startY="24"
-                android:endY="77"
-                android:startColor="#FFA550"
-                android:endColor="#EF7722"
-                android:type="linear" />
-        </aapt:attr>
-    </path>
+    <!-- Scale and center the icon -->
+    <group
+        android:scaleX="0.5"
+        android:scaleY="0.5"
+        android:translateX="240"
+        android:translateY="240">
 
-    <!-- Blue dot accent with gradient -->
-    <path
-        android:pathData="M 68,68 a 6,6 0 1,0 12,0 a 6,6 0 1,0 -12,0">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:startY="62"
-                android:endY="74"
-                android:startColor="#4DBFEC"
-                android:endColor="#0BA6DF"
-                android:type="linear" />
-        </aapt:attr>
-    </path>
+        <!-- Orange P -->
+        <group
+            android:scaleX="0.8"
+            android:scaleY="0.8"
+            android:translateX="80"
+            android:translateY="80">
+            <path
+                android:pathData="M415.26,615.26L415.26,762.26Q415.26,802.61 386.96,830.91Q358.65,859.22 318.39,859.22Q278.13,859.22 249.45,830.57Q220.78,801.92 220.78,761.7L220.78,197.74Q220.78,157.39 249.43,129.09Q278.08,100.78 318.3,100.78L513.22,100.78Q627.35,100.78 703.28,176.15Q779.22,251.52 779.22,358.3Q779.22,465.09 703.28,540.17Q627.35,615.26 513.22,615.26L415.26,615.26ZM415.26,438.3L509.35,438.3Q542.35,438.3 565.85,414.8Q589.35,391.3 589.35,358.3Q589.35,325.3 565.85,301.8Q542.35,278.3 509.35,278.3L415.26,278.3L415.26,438.3Z">
+                <aapt:attr name="android:fillColor">
+                    <gradient
+                        android:startY="100"
+                        android:endY="859"
+                        android:startColor="#EF7722"
+                        android:endColor="#FAA533"
+                        android:type="linear" />
+                </aapt:attr>
+            </path>
+        </group>
 
+        <!-- Blue dot -->
+        <group android:translateY="18">
+            <path
+                android:pathData="M600,680 a70,70 0 1,0 140,0 a70,70 0 1,0 -140,0">
+                <aapt:attr name="android:fillColor">
+                    <gradient
+                        android:startY="610"
+                        android:endY="750"
+                        android:startColor="#4DBFEC"
+                        android:endColor="#0BA6DF"
+                        android:type="linear" />
+                </aapt:attr>
+            </path>
+        </group>
+    </group>
 </vector>

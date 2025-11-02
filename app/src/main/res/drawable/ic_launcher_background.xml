@@ -20,25 +20,25 @@
         </aapt:attr>
     </path>
 
-    <!-- Subtle decorative circles in white/gray -->
-    <path
-        android:fillColor="#BDBDBD"
-        android:fillAlpha="0.15"
-        android:pathData="M 20,25 a 15,15 0 1,0 30,0 a 15,15 0 1,0 -30,0" />
+<!--    &lt;!&ndash; Subtle decorative circles in white/gray &ndash;&gt;-->
+<!--    <path-->
+<!--        android:fillColor="#BDBDBD"-->
+<!--        android:fillAlpha="0.15"-->
+<!--        android:pathData="M 20,25 a 15,15 0 1,0 30,0 a 15,15 0 1,0 -30,0" />-->
 
-    <path
-        android:fillColor="#BDBDBD"
-        android:fillAlpha="0.2"
-        android:pathData="M 65,70 a 20,20 0 1,0 40,0 a 20,20 0 1,0 -40,0" />
+<!--    <path-->
+<!--        android:fillColor="#BDBDBD"-->
+<!--        android:fillAlpha="0.2"-->
+<!--        android:pathData="M 65,70 a 20,20 0 1,0 40,0 a 20,20 0 1,0 -40,0" />-->
 
-    <path
-        android:fillColor="#BDBDBD"
-        android:fillAlpha="0.1"
-        android:pathData="M 75,15 a 12,12 0 1,0 24,0 a 12,12 0 1,0 -24,0" />
+<!--    <path-->
+<!--        android:fillColor="#BDBDBD"-->
+<!--        android:fillAlpha="0.1"-->
+<!--        android:pathData="M 75,15 a 12,12 0 1,0 24,0 a 12,12 0 1,0 -24,0" />-->
 
-    <path
-        android:fillColor="#BDBDBD"
-        android:fillAlpha="0.15"
-        android:pathData="M 5,80 a 18,18 0 1,0 36,0 a 18,18 0 1,0 -36,0" />
+<!--    <path-->
+<!--        android:fillColor="#BDBDBD"-->
+<!--        android:fillAlpha="0.15"-->
+<!--        android:pathData="M 5,80 a 18,18 0 1,0 36,0 a 18,18 0 1,0 -36,0" />-->
 
 </vector>
