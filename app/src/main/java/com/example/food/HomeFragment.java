@@ -121,9 +121,23 @@ public class HomeFragment extends Fragment {
             }
         });
         
-        // Set up staggered grid layout for Xiaohongshu-like appearance
+        // Set up staggered grid layout
         StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
+        layoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS);
         rvReviews.setLayoutManager(layoutManager);
+        
+        // add spacing between items matching profile page
+        int spacing = (int) (4 * getResources().getDisplayMetrics().density);
+        rvReviews.addItemDecoration(new RecyclerView.ItemDecoration() {
+            @Override
+            public void getItemOffsets(android.graphics.Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
+                outRect.left = spacing / 2;
+                outRect.right = spacing / 2;
+                outRect.top = spacing;
+                outRect.bottom = spacing;
+            }
+        });
+        
         rvReviews.setAdapter(reviewAdapter);
         
         // Set restaurant map to adapter
