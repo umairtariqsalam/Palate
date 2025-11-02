@@ -8,5 +8,8 @@
         <!-- Navigation bar configuration -->
         <item name="android:navigationBarColor">@color/white</item>
         <item name="android:windowLightNavigationBar">true</item>
+        
+        <!-- Button style override to prevent theme from overriding custom backgrounds -->
+        <item name="android:buttonStyle">@android:style/Widget.Button</item>
     </style>
 </resources>
