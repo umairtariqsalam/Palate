@@ -112,7 +112,7 @@
             android:gravity="center"
             android:layout_marginBottom="12dp">
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btn_not_crowded"
                 android:layout_width="0dp"
                 android:layout_height="36dp"
@@ -120,10 +120,11 @@
                 android:layout_marginEnd="4dp"
                 android:text="Not Crowded"
                 android:textSize="12sp"
-                android:background="@drawable/button_crowd_feedback_green"
+                android:background="@drawable/button_crowd_feedback_orange"
+                android:backgroundTint="@null"
                 android:textColor="@color/white" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btn_moderately_crowded"
                 android:layout_width="0dp"
                 android:layout_height="36dp"
@@ -132,10 +133,11 @@
                 android:layout_marginEnd="2dp"
                 android:text="Moderate"
                 android:textSize="12sp"
-                android:background="@drawable/button_crowd_feedback_yellow"
+                android:background="@drawable/button_crowd_feedback_orange"
+                android:backgroundTint="@null"
                 android:textColor="@color/white" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btn_very_crowded"
                 android:layout_width="0dp"
                 android:layout_height="36dp"
@@ -143,7 +145,8 @@
                 android:layout_marginStart="4dp"
                 android:text="Very Crowded"
                 android:textSize="12sp"
-                android:background="@drawable/button_crowd_feedback_red"
+                android:background="@drawable/button_crowd_feedback_orange"
+                android:backgroundTint="@null"
                 android:textColor="@color/white" />
         </LinearLayout>
 
