@@ -1515,9 +1515,15 @@ public class ProfileFragment extends Fragment {
                 tvCategoriesCount.setText(String.valueOf(categoriesCount));
                 tvRegionsCount.setText(String.valueOf(regionsCount));
                 
+                // Get actual lists
+                List<String> categoriesList = (List<String>) stats.get("categoriesList");
+                List<String> regionsList = (List<String>) stats.get("regionsList");
                 
-                setupDropdown(rvCategories, new ArrayList<>(), ivCategoriesArrow, categoriesSection);
-                setupDropdown(rvRegions, new ArrayList<>(), ivRegionsArrow, regionsSection);
+                if (categoriesList == null) categoriesList = new ArrayList<>();
+                if (regionsList == null) regionsList = new ArrayList<>();
+                
+                setupDropdown(rvCategories, categoriesList, ivCategoriesArrow, categoriesSection);
+                setupDropdown(rvRegions, regionsList, ivRegionsArrow, regionsSection);
         
         // Setup click listeners for dropdown sections
         LinearLayout categoriesClickSection = view.findViewById(R.id.categoriesSection);

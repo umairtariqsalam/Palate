@@ -335,6 +335,8 @@ public class ScoreCalculator {
         stats.put("uniqueRestaurants", uniqueRestaurantIds.size());
         stats.put("uniqueCategories", uniqueCategories.size());
         stats.put("uniqueRegions", uniqueRegions.size());
+        stats.put("categoriesList", new ArrayList<>(uniqueCategories));
+        stats.put("regionsList", new ArrayList<>(uniqueRegions));
 
         // restaurants reviewed more than once
         int repeatedRestaurants = 0;
