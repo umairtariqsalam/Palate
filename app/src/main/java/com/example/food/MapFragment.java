@@ -219,12 +219,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             return;
         }
         
-        // Show loading prompt
-        android.content.Context context = getContext();
-        if (context != null) {
-            Toast.makeText(context, "Loading restaurant data from Firebase...", Toast.LENGTH_SHORT).show();
-        }
-        
         Log.d(TAG, "Starting to load restaurant data from Firebase...");
         
         db.collection("restaurants")
@@ -236,11 +230,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                         return;
                     }
                     
-                    android.content.Context callbackContext = getContext();
                     if (queryDocumentSnapshots.isEmpty()) {
                         // No data in Firebase
                         Log.d(TAG, "No restaurant data in Firebase");
-                        Toast.makeText(callbackContext, "No restaurant data in Firebase, please wait for data upload to complete", Toast.LENGTH_LONG).show();
                     } else {
                         // Data exists in Firebase, load and display
                         List<Restaurant> restaurantsList = new ArrayList<>();
@@ -276,14 +268,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                         }
                         
                         Log.d(TAG, "Successfully loaded " + restaurantsList.size() + " restaurants");
-                        Toast.makeText(callbackContext, "Loaded " + restaurantsList.size() + " highly-rated restaurants from Firebase", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Firebase loading failed", e);
-                    if (isAdded() && getContext() != null) {
-                        Toast.makeText(getContext(), "Firebase connection failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    }
                 });
     }
 
